@@ -25,7 +25,6 @@ def init_db():
     conn.commit()
     conn.close()
 
-
 def save_event(aggregate_id, event_type, event_data):
     conn = get_connection()
 
@@ -68,3 +67,18 @@ def load_events(aggregate_id):
     conn.close()
 
     return rows
+
+def loadMaxAccountID():
+    conn = get_connection()
+
+    cur = conn.execute(
+        """
+        SELECT MAX(CAST(SUBSTR(aggregate_id,5) AS INTEGER))
+        FROM event_store
+        """,
+    )
+
+    maximo = cur.fetchone()[0]
+    conn.close()
+
+    return maximo   

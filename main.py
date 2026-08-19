@@ -2,7 +2,7 @@ import toga
 from toga.style import Pack
 from toga.style.pack import COLUMN
 
-from database import init_db
+from database import init_db, loadMaxAccountID
 from commands import CreateAccount, DepositMoney
 from domain import (
     handle_create_account,
@@ -18,11 +18,22 @@ class EventSourcingApp(toga.App):
 
         init_db()
 
-        self.account_id = "ACC-001"
+        self.account_id = f"ACC-{loadMaxAccountID()+1:03d}"
 
-        self.label = toga.Label(
-            "Saldo: 0",
-            style=Pack(padding=10)
+        self.owner_input = toga.TextInput(
+            placeholder="Nombre del titular",
+            style=Pack(margin=10)
+            )
+
+        self.account_input = toga.TextInput(
+            value=self.account_id,
+            placeholder="Número de cuenta",
+            style=Pack(margin=10)
+        )
+
+        self.label_saldo = toga.Label(
+            "Titular: - | Saldo: 0",
+            style=Pack(margin=10)
         )
 
         create_btn = toga.Button(
@@ -37,11 +48,13 @@ class EventSourcingApp(toga.App):
 
         box = toga.Box(
             children=[
-                self.label,
+                self.account_input,
+                self.owner_input, 
+                self.label_saldo,
                 create_btn,
                 deposit_btn
             ],
-            style=Pack(direction=COLUMN, padding=10)
+            style=Pack(direction=COLUMN, margin=10)
         )
 
         self.main_window = toga.MainWindow(title=self.formal_name)
@@ -52,9 +65,17 @@ class EventSourcingApp(toga.App):
 
     def create_account(self, widget):
 
+        owner = self.owner_input.value
+
+        if not owner:
+            self.label_saldo.text = "Debe indicar un nombre"
+            return
+
+        account_id = self.account_input.value    
+
         cmd = CreateAccount(
             self.account_id,
-            "Jorge"
+            owner
         )
 
         handle_create_account(cmd)
@@ -76,11 +97,10 @@ class EventSourcingApp(toga.App):
 
         acc = load_account(self.account_id)
 
-        self.label.text = (
+        self.label_saldo.text = (
             f"Titular: {acc.owner} | "
             f"Saldo: {acc.balance}"
         )
-
 
 def main():
     return EventSourcingApp()
