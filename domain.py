@@ -48,3 +48,33 @@ def handle_deposit(command):
             "amount": command.amount
         }
     )
+
+def handle_withdraw(command):
+
+    save_event(
+        command.account_id,
+        "Moneywithdraw",
+        {
+            "amount": command.amount
+        }
+    )
+
+def handle_moneyTransfer(command):
+
+    save_event(
+        command.account_id,
+        "MoneyTransfer",
+        {
+            "amount": command.amount
+        }
+    )
+
+def handle_close_account(command):
+
+    save_event(
+        command.account_id,
+        "CloseAccount",
+        {
+            "amount": command.amount
+        }
+    )

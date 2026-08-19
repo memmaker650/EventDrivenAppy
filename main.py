@@ -2,7 +2,7 @@ import toga
 from toga.style import Pack
 from toga.style.pack import COLUMN
 
-from database import init_db, loadMaxAccountID
+from database import init_db, loadMaxAccountID, load_accounts
 from commands import CreateAccount, DepositMoney
 from domain import (
     handle_create_account,
@@ -13,12 +13,21 @@ from domain import (
 print("Arrancando aplicación...")
 
 class EventSourcingApp(toga.App):
+    def account_changed(self, widget):       
+        self.account_id = widget.value
+
+        self.refresh_balance()
 
     def startup(self):
 
         init_db()
 
         self.account_id = f"ACC-{loadMaxAccountID()+1:03d}"
+
+        self.titulo = toga.Label(
+            "ID cuenta",
+            style=Pack(margin=10)
+            )
 
         self.owner_input = toga.TextInput(
             placeholder="Nombre del titular",
@@ -46,12 +55,30 @@ class EventSourcingApp(toga.App):
             on_press=self.deposit
         )
 
+        self.separador = toga.Box(
+            style=Pack(
+                height=1,
+                background_color="#C0C0C0",
+                margin_top=5,
+                margin_bottom=5
+            )
+        )
+
+        self.account_selector = toga.Selection(
+            items=[],
+            on_change=self.account_changed
+        )
+        self.account_selector.items = load_accounts()
+
         box = toga.Box(
             children=[
+                self.titulo,
                 self.account_input,
-                self.owner_input, 
-                self.label_saldo,
+                self.owner_input,
+                self.separador,
                 create_btn,
+                self.account_selector, 
+                self.label_saldo,
                 deposit_btn
             ],
             style=Pack(direction=COLUMN, margin=10)
@@ -80,9 +107,12 @@ class EventSourcingApp(toga.App):
 
         handle_create_account(cmd)
 
+        self.account_selector.items = load_accounts()
+
         self.refresh_balance()
 
     def deposit(self, widget):
+        self.account_id = self.account_selector.value
 
         cmd = DepositMoney(
             self.account_id,
@@ -101,6 +131,8 @@ class EventSourcingApp(toga.App):
             f"Titular: {acc.owner} | "
             f"Saldo: {acc.balance}"
         )
+    
+    
 
 def main():
     return EventSourcingApp()
@@ -109,7 +141,7 @@ if __name__ == "__main__":
     print("Creando app...")
 
     app = EventSourcingApp(
-        "Event Sourcing",
+        "Event Based ApPy",
         "org.example.eventsourcing"
     )
 

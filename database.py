@@ -82,3 +82,19 @@ def loadMaxAccountID():
     conn.close()
 
     return maximo   
+
+def load_accounts():
+
+    conn = get_connection()
+
+    cur = conn.execute("""
+        SELECT DISTINCT aggregate_id
+        FROM event_store
+        ORDER BY aggregate_id
+    """)
+
+    cuentas = [row[0] for row in cur.fetchall()]
+
+    conn.close()
+
+    return cuentas
