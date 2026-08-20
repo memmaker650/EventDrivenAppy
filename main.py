@@ -7,16 +7,30 @@ from commands import CreateAccount, DepositMoney
 from domain import (
     handle_create_account,
     handle_deposit,
-    load_account,
+    handle_withdraw,
+    handle_moneyTransfer,
+    handle_close_account,
+    load_account
 )
 
 print("Arrancando aplicación...")
 
 class EventSourcingApp(toga.App):
+    estadoApp = "info"
+    estadoTexto = "Texto de prueba"
+    action = ""
+
     def account_changed(self, widget):       
         self.account_id = widget.value
 
         self.refresh_balance()
+
+    def action_changed(self, widget):       
+        self.action = widget.value
+
+    def defineEstadoApp(self, estado, texto):       
+        self.estadoApp = estado
+        self.estadoTexto = texto
 
     def startup(self):
 
@@ -40,19 +54,40 @@ class EventSourcingApp(toga.App):
             style=Pack(margin=10)
         )
 
-        self.label_saldo = toga.Label(
-            "Titular: - | Saldo: 0",
-            style=Pack(margin=10)
-        )
+        if self.estadoApp == "info":
+            self.label_info = toga.Label(
+                self.estadoTexto,
+                style=Pack(margin=10)
+            )
+        elif self.estadoApp == "error":
+            self.label_info = toga.Label(
+                self.estadoTexto,
+                style=Pack(margin=10, color="red")
+            )
+        elif self.estadoApp == "cuidado":
+            self.label_info = toga.Label(
+                self.estadoTexto,
+                style=Pack(margin=10, color="yellow")
+            )
+        elif self.estadoApp == "ok":
+            self.label_info = toga.Label(
+                self.estadoTexto,
+                style=Pack(margin=10, color="green")
+            )
 
         create_btn = toga.Button(
             "Crear cuenta",
             on_press=self.create_account
+        )   
+
+        self.acction_selector = toga.Selection(
+            items=["crear", "depositar", "retirar", "transferencia", "cerrar"],
+            on_change=self.account_changed
         )
 
-        deposit_btn = toga.Button(
-            "Ingresar 100",
-            on_press=self.deposit
+        self.execute_btn = toga.Button(
+            "Ejecutar",
+            on_press=lambda widget: self.ejecutarAccion(widget, 100)
         )
 
         self.separador = toga.Box(
@@ -72,13 +107,17 @@ class EventSourcingApp(toga.App):
 
         self.acction_selector = toga.Selection(
             items=["crear", "depositar", "retirar", "transferencia", "cerrar"],
-            on_change=self.account_changed
+            on_change=self.action_changed
         )
 
-        btn_cuentas = toga.Button(
+        self.btn_cuentas = toga.Button(
             "Ver cuentas",
             on_press=self.abrir_ventana_cuentas,
-            style=Pack(padding=10)
+            style=Pack(margin=10)
+        )
+
+        self.espacio = toga.Box(
+            style=toga.style.Pack(height=20)
         )
 
         box = toga.Box(
@@ -86,18 +125,23 @@ class EventSourcingApp(toga.App):
                 self.titulo,
                 self.account_input,
                 self.owner_input,
-                self.separador,
                 create_btn,
+                self.espacio,
+                self.separador,
+                self.espacio,
                 self.account_selector, 
-                self.label_saldo,
                 self.acction_selector,
-                deposit_btn,
-                btn_cuentas
+                self.execute_btn,
+                self.espacio,
+                self.espacio,
+                self.espacio,
+                self.btn_cuentas,
+                self.espacio,
+                self.espacio,
+                self.label_info
             ],
             style=Pack(direction=COLUMN, margin=10)
         )
-
-        
 
         self.main_window = toga.MainWindow(title=self.formal_name)
         self.main_window.content = box
@@ -116,6 +160,12 @@ class EventSourcingApp(toga.App):
             "Listado de cuentas bancarias",
             style=Pack(margin_bottom=10)
         )
+        
+        self.account_selector = toga.Selection(
+            items=[],
+            on_change=self.account_changed
+        )
+        self.account_selector.items = load_accounts()
 
         # Datos de ejemplo
         datos = [
@@ -137,8 +187,26 @@ class EventSourcingApp(toga.App):
             style=Pack(flex=1)
         )
 
+        self.espacio = toga.Box(
+            style=toga.style.Pack(height=20)
+        )
+
+        tablaEventos = toga.Table(
+            columns=[
+                "ID cuenta",
+                "Titular",
+                "Saldo",
+                "Estado",
+                "Último movimiento"
+                ],
+            data=datos,
+            style=Pack(flex=1)
+        )
+
         box.add(titulo)
+        box.add(self.account_selector)
         box.add(tabla)
+        box.add(self.espacio)
 
         ventana.content = box
         ventana.show()   
@@ -148,7 +216,7 @@ class EventSourcingApp(toga.App):
         owner = self.owner_input.value
 
         if not owner:
-            self.label_saldo.text = "Debe indicar un nombre"
+            self.label_info.text = "Debe indicar un nombre"
             return
 
         account_id = self.account_input.value    
@@ -164,15 +232,41 @@ class EventSourcingApp(toga.App):
 
         self.refresh_balance()
 
-    def deposit(self, widget):
+    def ejecutarAccion(self, widget, accion):
         self.account_id = self.account_selector.value
 
-        cmd = DepositMoney(
-            self.account_id,
-            100
-        )
+        if accion == "crear":
+            create_account()
 
-        handle_deposit(cmd)
+        elif accion == "depositar":
+            cmd = DepositMoney(
+                self.account_id,
+                100
+            )
+
+            handle_deposit(cmd)
+        elif accion == "retirar":
+            cmd = Moneywithdraw(
+                self.account_id,
+                100
+            )
+
+            handle_withdraw(cmd)
+
+        elif accion == "transferencia":
+            cmd = MoneyTransfer(
+                self.account_id,
+                100
+            )
+
+            handle_moneyTransfer(cmd)
+
+        elif accion == "cerrar":
+            cmd = CloseAccount(
+                self.account_id
+            )
+
+            handle_close_account(cmd)
 
         self.refresh_balance()
 
@@ -180,7 +274,7 @@ class EventSourcingApp(toga.App):
 
         acc = load_account(self.account_id)
 
-        self.label_saldo.text = (
+        self.label_info.text = (
             f"Titular: {acc.owner} | "
             f"Saldo: {acc.balance}"
         )

@@ -1,7 +1,8 @@
 class CreateAccount:
-    def __init__(self, account_id, owner):
+    def __init__(self, account_id, owner, state):
         self.account_id = account_id
         self.owner = owner
+        self.state = state
 
 
 class DepositMoney:

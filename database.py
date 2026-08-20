@@ -34,7 +34,7 @@ def create_AccountTable():
     conn = get_connection()
 
     conn.execute("""
-    CREATE TABLE IF NOT EXISTS account_name(
+    CREATE TABLE IF NOT EXISTS account(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         aggregate_id TEXT NOT NULL,
         name TEXT NOT NULL,

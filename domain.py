@@ -2,7 +2,6 @@ import json
 
 from database import save_event, load_events
 
-
 class BankAccount:
     def __init__(self):
         self.owner = None
@@ -18,7 +17,6 @@ class BankAccount:
 
 
 def load_account(account_id):
-
     account = BankAccount()
 
     for event_type, data_json in load_events(account_id):
@@ -29,7 +27,6 @@ def load_account(account_id):
 
 
 def handle_create_account(command):
-
     save_event(
         command.account_id,
         "AccountCreated",
@@ -40,7 +37,6 @@ def handle_create_account(command):
 
 
 def handle_deposit(command):
-
     save_event(
         command.account_id,
         "MoneyDeposited",
@@ -50,7 +46,6 @@ def handle_deposit(command):
     )
 
 def handle_withdraw(command):
-
     save_event(
         command.account_id,
         "Moneywithdraw",
@@ -60,17 +55,16 @@ def handle_withdraw(command):
     )
 
 def handle_moneyTransfer(command):
-
     save_event(
         command.account_id,
         "MoneyTransfer",
         {
-            "amount": command.amount
+            "amount": command.amount,
+            "To": command.amount
         }
     )
 
 def handle_close_account(command):
-
     save_event(
         command.account_id,
         "CloseAccount",
