@@ -70,6 +70,17 @@ class EventSourcingApp(toga.App):
         )
         self.account_selector.items = load_accounts()
 
+        self.acction_selector = toga.Selection(
+            items=["crear", "depositar", "retirar", "transferencia", "cerrar"],
+            on_change=self.account_changed
+        )
+
+        btn_cuentas = toga.Button(
+            "Ver cuentas",
+            on_press=self.abrir_ventana_cuentas,
+            style=Pack(padding=10)
+        )
+
         box = toga.Box(
             children=[
                 self.titulo,
@@ -79,16 +90,58 @@ class EventSourcingApp(toga.App):
                 create_btn,
                 self.account_selector, 
                 self.label_saldo,
-                deposit_btn
+                self.acction_selector,
+                deposit_btn,
+                btn_cuentas
             ],
             style=Pack(direction=COLUMN, margin=10)
         )
+
+        
 
         self.main_window = toga.MainWindow(title=self.formal_name)
         self.main_window.content = box
         self.main_window.show()
 
         self.refresh_balance()
+
+    def abrir_ventana_cuentas(self, widget):
+        # Nueva ventana
+        ventana = toga.Window(title="Listado de cuentas", size=(900, 500))
+        # Contenedor principal
+        box = toga.Box(style=Pack(direction=COLUMN, margin=10))
+
+        # Título
+        titulo = toga.Label(
+            "Listado de cuentas bancarias",
+            style=Pack(margin_bottom=10)
+        )
+
+        # Datos de ejemplo
+        datos = [
+            (1, "Juan Pérez", 1250.50, "Activa", "2026-08-20"),
+            (2, "Ana García", 350.00, "Activa", "2026-08-19"),
+            (3, "Pedro López", 0.00, "Bloqueada", "2026-08-15"),
+        ]
+
+        # Tabla
+        tabla = toga.Table(
+            columns=[
+                "ID cuenta",
+                "Titular",
+                "Saldo",
+                "Estado",
+                "Último movimiento"
+                ],
+            data=datos,
+            style=Pack(flex=1)
+        )
+
+        box.add(titulo)
+        box.add(tabla)
+
+        ventana.content = box
+        ventana.show()   
 
     def create_account(self, widget):
 
@@ -132,8 +185,6 @@ class EventSourcingApp(toga.App):
             f"Saldo: {acc.balance}"
         )
     
-    
-
 def main():
     return EventSourcingApp()
 
