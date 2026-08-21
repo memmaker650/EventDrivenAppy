@@ -1,6 +1,9 @@
 import json
 
+import logging
 from database import save_event, load_events
+
+logger = logging.getLogger(__name__)
 
 class BankAccount:
     def __init__(self):
@@ -27,14 +30,19 @@ def load_account(account_id):
 
 
 def handle_create_account(command):
-    save_event(
+    print("Handle_create_account")
+    logger.info("Hadle_create_account")
+    resultado = save_event(
         command.account_id,
         "AccountCreated",
         {
-            "owner": command.owner
+            "account_id": command.account_id,
+            "owner": command.owner,
+            "state":"open"
         }
     )
-
+    
+    return resultado
 
 def handle_deposit(command):
     save_event(
@@ -61,6 +69,25 @@ def handle_moneyTransfer(command):
         {
             "amount": command.amount,
             "To": command.amount
+        }
+    )
+
+def handle_PaymentCard(command):
+    save_event(
+        command.account_id,
+        "PaymentCard",
+        {
+            "amount": command.amount,
+            "shop": command.shop
+        }
+    )
+
+def handle_Overdraft(command):
+    save_event(
+        command.account_id,
+        "Overdraft",
+        {
+            "amount": command.amount,
         }
     )
 

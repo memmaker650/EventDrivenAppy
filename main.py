@@ -1,6 +1,8 @@
 import toga
 from toga.style import Pack
 from toga.style.pack import COLUMN
+import logging
+from pathlib import Path
 
 from database import init_db, loadMaxAccountID, load_accounts
 from commands import CreateAccount, DepositMoney
@@ -33,13 +35,13 @@ class EventSourcingApp(toga.App):
         self.estadoTexto = texto
 
     def startup(self):
-
+        logging.info("Dentro startup")
         init_db()
 
         self.account_id = f"ACC-{loadMaxAccountID()+1:03d}"
 
         self.titulo = toga.Label(
-            "ID cuenta",
+            "EggBank - Operaciones por eventos.",
             style=Pack(margin=10)
             )
 
@@ -77,7 +79,7 @@ class EventSourcingApp(toga.App):
 
         create_btn = toga.Button(
             "Crear cuenta",
-            on_press=self.create_account
+            on_press=lambda widget: self.create_account(widget, self.account_input, self.owner_input)
         )   
 
         self.acction_selector = toga.Selection(
@@ -106,7 +108,7 @@ class EventSourcingApp(toga.App):
         self.account_selector.items = load_accounts()
 
         self.acction_selector = toga.Selection(
-            items=["crear", "depositar", "retirar", "transferencia", "cerrar"],
+            items=["crear", "depositar", "retirar", "transferencia", "pago_tarjeta", "cerrar"],
             on_change=self.action_changed
         )
 
@@ -150,6 +152,7 @@ class EventSourcingApp(toga.App):
         self.refresh_balance()
 
     def abrir_ventana_cuentas(self, widget):
+        logging.info("Dentro de ventana sobre cuentas.")
         # Nueva ventana
         ventana = toga.Window(title="Listado de cuentas", size=(900, 500))
         # Contenedor principal
@@ -211,26 +214,29 @@ class EventSourcingApp(toga.App):
         ventana.content = box
         ventana.show()   
 
-    def create_account(self, widget):
-
-        owner = self.owner_input.value
+    def create_account(self, widget, id_input, ow_input):
+        logging.info("Dentro de create_account.")
+        owner = ow_input.value
+        print("Owner: ", owner)
 
         if not owner:
             self.label_info.text = "Debe indicar un nombre"
+            print("Debe indicar un nombre")
             return
 
-        account_id = self.account_input.value    
+        self.account_id = id_input.value    
 
         cmd = CreateAccount(
             self.account_id,
             owner
         )
 
-        handle_create_account(cmd)
+        resul = handle_create_account(cmd)
 
         self.account_selector.items = load_accounts()
 
-        self.refresh_balance()
+        # self.refresh_balance()
+        self.gestion_mensaje_info(resul)
 
     def ejecutarAccion(self, widget, accion):
         self.account_id = self.account_selector.value
@@ -278,17 +284,35 @@ class EventSourcingApp(toga.App):
             f"Titular: {acc.owner} | "
             f"Saldo: {acc.balance}"
         )
+
+    def gestion_mensaje_info (self, resultado):
+        logging.info("gestion_mensaje_info")
+        if resultado["ok"]: 
+            estadoApp = "ok"
+            self.label_info.text = resultado["mensaje"]
+            self.label_info.style.color = "green"
+        else:
+            estadoApp = "error"
+            self.label_info.text = "¡ ERROR !" + " " + resultado["mensaje"],
+            self.label_info.style.color = "red" 
     
 def main():
-    return EventSourcingApp()
+    log_file = Path(r"C:\Users\Jorge.Vega\Documents\ENABLON-proj\PROYECTOS\EbD\EventDrivenApplication\log\EbAPy.log")
+    logging.basicConfig(
+        filename=log_file,
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(name)s -  %(message)s",
+        force=True
+        )
+
+    app = EventSourcingApp(
+        "Event Based ApPy",
+        "com.SkullWithGasMask.EventBasedBank")
+
+    print("Lanzando app...")
+    app.main_loop()    
 
 if __name__ == "__main__":
     print("Creando app...")
 
-    app = EventSourcingApp(
-        "Event Based ApPy",
-        "org.example.eventsourcing"
-    )
-
-    print("Lanzando app...")
-    app.main_loop()
+    main()    

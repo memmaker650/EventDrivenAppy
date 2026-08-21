@@ -1,15 +1,18 @@
 import sqlite3
 import json
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 DB_NAME = "events.db"
-
 
 def get_connection():
     return sqlite3.connect(DB_NAME)
 
 
 def init_db():
+    logger.info("init_DB")
     create_eventsTable()
     create_AccountTable()
     create_Account_states()
@@ -36,7 +39,7 @@ def create_AccountTable():
     conn.execute("""
     CREATE TABLE IF NOT EXISTS account(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        aggregate_id TEXT NOT NULL,
+        account_id TEXT NOT NULL,
         name TEXT NOT NULL,
         created_at TEXT NOT NULL,
         state TEXT NOT NULL,
@@ -51,12 +54,12 @@ def load_accountInfo():
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT id_cuenta,
+        SELECT account_id,
             titular,
             saldo,
             estado,
             ultimo_movimiento
-        FROM cuentas
+        FROM account
     """)
 
     datos = cursor.fetchall()    
@@ -171,28 +174,44 @@ def fill_account_states():
         conn.close()
 
 def save_event(aggregate_id, event_type, event_data):
-    conn = get_connection()
-
-    conn.execute(
-        """
-        INSERT INTO event_store(
-            aggregate_id,
-            event_type,
-            event_data,
-            created_at
+    logger.info("Dentro de Guardado un Evento.")
+    try:    
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO event_store(
+                aggregate_id,
+                event_type,
+                event_data,
+                created_at
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                aggregate_id,
+                event_type,
+                json.dumps(event_data),
+                datetime.now(),
+            ),
         )
-        VALUES (?, ?, ?, ?)
-        """,
-        (
-            aggregate_id,
-            event_type,
-            json.dumps(event_data),
-            datetime.utcnow().isoformat(),
-        ),
-    )
 
-    conn.commit()
-    conn.close()
+        conn.commit()
+        logger.info("Insert realizado correctamente")
+        return {
+            "ok": True,
+            "id": cur.lastrowid,
+            "mensaje": "Evento insertado"
+        }
+    except sqlite3.Error as e:
+        logger.error(f"Error al insertar: {e}")
+        return {
+            "ok": False,
+            "id": None,
+            "mensaje": str(e)
+        }
+    finally:
+        conn.close()
 
 def load_events(aggregate_id):
     conn = get_connection()
@@ -228,7 +247,7 @@ def loadMaxAccountID():
     return maximo   
 
 def load_accounts():
-
+    logger.info("load_accounts")
     conn = get_connection()
 
     cur = conn.execute("""
@@ -240,5 +259,61 @@ def load_accounts():
     cuentas = [row[0] for row in cur.fetchall()]
 
     conn.close()
+
+    return cuentas
+
+def check_num_accounts_user():
+    logger.info("check_num_accounts_user")
+    conn = get_connection()
+
+    cuentas = conn.execute("""
+        SELECT owner, COUNT(*) AS num_cuentas
+        FROM account
+        GROUP BY owner
+        ORDER BY owner asc;
+    """).fetchall()
+
+    conn.close()
+
+    for owner, num_cuentas in cuentas:
+        print(f"{owner}: {num_cuentas}")
+
+    return cuentas
+
+# Complejo, deben ser cuentas idénticas, con mismos movimientos.
+def check_dup_accounts():
+    logger.info("check_dup_accounts")
+    conn = get_connection()
+
+    cur = conn.execute("""
+        SELECT DISTINCT aggregate_id
+        FROM event_store
+        ORDER BY aggregate_id
+    """)
+
+    cuentas = [row[0] for row in cur.fetchall()]
+
+    conn.close()
+
+    return cuentas
+
+def check_overdraft():
+    logger.info("check_overdraft")
+
+    conn = get_connection()
+
+    cuentas = conn.execute("""
+        SELECT account, money
+        FROM account
+        ORDER BY money asc
+    """)
+
+    conn.close()
+
+    for cuenta in cuentas:        
+        money = cuenta[1]
+        if money < 0:
+            print("Cuenta: "+cuenta[1]+"Saldo: " +money)
+            logger.info("Cuenta: "+cuenta[1]+"Saldo: " +money)
 
     return cuentas
