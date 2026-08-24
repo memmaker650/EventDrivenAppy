@@ -16,7 +16,7 @@ class BankAccount:
             self.owner = data["owner"]
 
         elif event_type == "MoneyDeposited":
-            self.balance += data["amount"]
+            self.balance += int(data["amount"])
 
 
 def load_account(account_id):
@@ -45,34 +45,49 @@ def handle_create_account(command):
     return resultado
 
 def handle_deposit(command):
+    print("handle_deposit")
+    logger.info("handle_deposit")
+
     save_event(
         command.account_id,
         "MoneyDeposited",
         {
+            "account_id": command.account_id,
             "amount": command.amount
         }
     )
 
 def handle_withdraw(command):
+    print("handle_withdraw")
+    logger.info("handle_withdraw")
+
     save_event(
         command.account_id,
         "Moneywithdraw",
         {
+            "account_id": command.account_id,
             "amount": command.amount
         }
     )
 
 def handle_moneyTransfer(command):
+    print("handle_deposit")
+    logger.info("handle_deposit")
+
     save_event(
         command.account_id,
         "MoneyTransfer",
         {
+            "account_id": command.account_id,
             "amount": command.amount,
             "To": command.amount
         }
     )
 
 def handle_PaymentCard(command):
+    print("handle_deposit")
+    logger.info("handle_deposit")
+
     save_event(
         command.account_id,
         "PaymentCard",
@@ -83,6 +98,9 @@ def handle_PaymentCard(command):
     )
 
 def handle_Overdraft(command):
+    print("handle_deposit")
+    logger.info("handle_deposit")
+
     save_event(
         command.account_id,
         "Overdraft",
@@ -92,6 +110,9 @@ def handle_Overdraft(command):
     )
 
 def handle_close_account(command):
+    print("handle_deposit")
+    logger.info("handle_deposit")
+
     save_event(
         command.account_id,
         "CloseAccount",

@@ -1,16 +1,21 @@
+import os
 import toga
 from toga.style import Pack
 from toga.style.pack import COLUMN
 import logging
 from pathlib import Path
+from datetime import datetime
+
+fecha = datetime.now().strftime("%Y%m%d")
 
 from database import init_db, loadMaxAccountID, load_accounts
-from commands import CreateAccount, DepositMoney
+from commands import CreateAccount, DepositMoney, MoneyWithDraw, TransferMoney, PaymentCard, Overdraft
 from domain import (
     handle_create_account,
     handle_deposit,
     handle_withdraw,
     handle_moneyTransfer,
+    handle_PaymentCard,
     handle_close_account,
     load_account
 )
@@ -35,8 +40,7 @@ class EventSourcingApp(toga.App):
         logging.info("Dentro de Action_Changed")
 
         accion = widget.value
-        print("Acción marcada: ", accion)
-        print("WActión:", widget.value)
+        # logging.info("WActión: ", accion)
 
         # Ocultar todo por defecto
         self.amount_input.style.visibility = "hidden"
@@ -112,11 +116,6 @@ class EventSourcingApp(toga.App):
             on_change=self.action_changed
         )
 
-        self.execute_btn = toga.Button(
-            "Ejecutar",
-            on_press=lambda widget: self.ejecutarAccion(widget, 100)
-        )
-
         self.separador = toga.Box(
             style=Pack(
                 height=1,
@@ -136,7 +135,7 @@ class EventSourcingApp(toga.App):
             "Acción Tipo Evento :",
             style=Pack(margin=10)
             )
-        self.acction_selector = toga.Selection(
+        self.action_selector = toga.Selection(
             items=["crear", "depositar", "retirar", "transferencia", "pago_tarjeta", "cerrar"],
             on_change=self.action_changed
         )
@@ -157,6 +156,12 @@ class EventSourcingApp(toga.App):
             on_change=self.account_changed
         )
         self.transfer_account_selector.items = load_accounts()
+
+        # Botón Ejecutar Acción
+        self.execute_btn = toga.Button(
+            "Ejecutar",
+            on_press=lambda widget: self.ejecutarAccion(widget, self.action_selector, self.account_selector, self.amount_input, self.transfer_account_selector)
+        )
 
         # Ocultos inicialmente
         self.amount_input.style.visibility = "hidden"
@@ -184,7 +189,7 @@ class EventSourcingApp(toga.App):
                 self.espacio,
                 self.account_selector,
                 self.accion_label, 
-                self.acction_selector,
+                self.action_selector,
                 self.amount_input,
                 self.label_destino,
                 self.transfer_account_selector,
@@ -294,38 +299,50 @@ class EventSourcingApp(toga.App):
         # self.refresh_balance()
         self.gestion_mensaje_info(resul)
 
-    def ejecutarAccion(self, widget, accion):
+    def ejecutarAccion(self, widget, accion, origen, cantidad, destino):
+        logging.info("into de ejecutarAccion.")
+        print("into de ejecutarAccion.")
+        print("------------------------------")
+        print("Acció: ", accion.value)
+        print("Origen: ", origen.value)
+        print("Cantidad: ", cantidad.value)
+        print("Destino: ", destino.value)
+
         self.account_id = self.account_selector.value
 
-        if accion == "crear":
+        if accion.value == "crear":
             create_account()
 
-        elif accion == "depositar":
+        elif accion.value == "depositar":
+            print("Jump-2_handle_deposit")
             cmd = DepositMoney(
-                self.account_id,
-                100
+                origen.value,
+                cantidad.value
             )
 
             handle_deposit(cmd)
-        elif accion == "retirar":
-            cmd = Moneywithdraw(
-                self.account_id,
-                100
+        elif accion.value == "retirar":
+            print("Jump-2_handle_withdraw")
+            cmd = MoneyWithDraw(
+                origen.value,
+                cantidad.value
             )
 
             handle_withdraw(cmd)
 
-        elif accion == "transferencia":
+        elif accion.value == "transferencia":
+            print("Jump-2_handle_Transfer")
             cmd = MoneyTransfer(
-                self.account_id,
-                100
+                origen.value,
+                cantidad.value,
+                destino.value
             )
 
-            handle_moneyTransfer(cmd)
+            handle_moneyTransfer(cmd)    
 
-        elif accion == "cerrar":
+        elif accion.value == "cerrar":
             cmd = CloseAccount(
-                self.account_id
+                origen.value
             )
 
             handle_close_account(cmd)
@@ -353,9 +370,9 @@ class EventSourcingApp(toga.App):
             self.label_info.style.color = "red" 
     
 def main():
-    log_file = Path(r"C:\Users\Jorge.Vega\Documents\ENABLON-proj\PROYECTOS\EbD\EventDrivenApplication\log\EbAPy.log")
+    log_file = Path(r"C:\Users\Jorge.Vega\Documents\ENABLON-proj\PROYECTOS\EbD\EventDrivenApplication\log\\")
     logging.basicConfig(
-        filename=log_file,
+        filename=os.path.join(log_file, f"EbAPy_{fecha}.log"),
         level=logging.INFO,
         format="%(asctime)s - %(levelname)s - %(name)s -  %(message)s",
         force=True

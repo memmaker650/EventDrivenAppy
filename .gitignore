@@ -8,3 +8,5 @@ __pycache__/domain.cpython-314.pyc
 __pycache__/main.cpython-314.pyc
 
 *.log
+
+events.db

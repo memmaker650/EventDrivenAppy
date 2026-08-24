@@ -14,12 +14,12 @@ class DepositMoney:
         self.account_id = account_id
         self.amount = amount
 
-class WithDraw:
+class MoneyWithDraw:
     def __init__(self, account_id, amount):
         self.account_id = account_id
         self.amount = amount
 
-class TrasferMoney:
+class TransferMoney:
     def __init__(self, account_id, amount, destiny):
         self.account_id = account_id
         self.amount = amount

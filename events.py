@@ -12,7 +12,7 @@ class MoneyDeposited:
     def __init__(self, amount):
         self.amount = amount
 
-class MoneyWithdrawn:
+class MoneyWithDraw:
     def __init__(self, amount):
         self.amount = -amount
 
