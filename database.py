@@ -37,11 +37,11 @@ def create_AccountTable():
     conn = get_connection()
 
     conn.execute("""
-    CREATE TABLE IF NOT EXISTS account(
+    CREATE TABLE IF NOT EXISTS accounts(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         account_id TEXT NOT NULL,
         name TEXT NOT NULL,
-        created_at TEXT NOT NULL,
+        created_at DATE DEFAULT (datetime('now')),
         state TEXT NOT NULL,
         money REAL NOT NULL DEFAULT 0.0
     )
@@ -50,7 +50,7 @@ def create_AccountTable():
     conn.commit()
     conn.close() 
 
-def load_accountInfo():
+def load_accountInfo(cuenta):
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -60,9 +60,55 @@ def load_accountInfo():
             estado,
             ultimo_movimiento
         FROM account
-    """)
+        where account_id = ?
+    """,            
+    (
+        cuenta,
+    ),)
 
-    datos = cursor.fetchall()    
+    datos = cursor.fetchall() 
+
+def crearCuenta(accid, owner):
+    conn = get_connection()
+
+    fechaActual = datetime.now()
+
+    conn.execute(
+        """
+        INSERT INTO accounts(
+        account_id,
+        name,
+        created_at,
+        state,
+        money
+        )
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            accid.value,
+            owner.value,
+            fechaActual, 
+            "open",
+            0.0,
+        ),
+    )
+
+    conn.commit()
+    conn.close()
+
+def update_accountMoney(dinero, cuenta):
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE accounts SET 
+        money = ?
+        where account_id = ?
+    """,            
+    (
+        dinero, cuenta,
+    ),)
+
+    datos = cursor.fetchall()        
 
 def create_Account_states():
     conn = get_connection()

@@ -8,7 +8,7 @@ from datetime import datetime
 
 fecha = datetime.now().strftime("%Y%m%d")
 
-from database import init_db, loadMaxAccountID, load_accounts
+import database
 from commands import CreateAccount, DepositMoney, MoneyWithDraw, TransferMoney, PaymentCard, Overdraft
 from domain import (
     handle_create_account,
@@ -65,9 +65,9 @@ class EventSourcingApp(toga.App):
 
     def startup(self):
         logging.info("Dentro startup")
-        init_db()
+        database.init_db()
 
-        self.account_id = f"ACC-{loadMaxAccountID()+1:03d}"
+        self.account_id = f"ACC-{database.loadMaxAccountID()+1:03d}"
 
         self.titulo = toga.Label(
             "EggBank - Operaciones por eventos.",
@@ -129,7 +129,7 @@ class EventSourcingApp(toga.App):
             items=[],
             on_change=self.account_changed
         )
-        self.account_selector.items = load_accounts()
+        self.account_selector.items = database.load_accounts()
 
         self.accion_label = toga.Label(
             "Acción Tipo Evento :",
@@ -155,7 +155,7 @@ class EventSourcingApp(toga.App):
             items=[],
             on_change=self.account_changed
         )
-        self.transfer_account_selector.items = load_accounts()
+        self.transfer_account_selector.items = database.load_accounts()
 
         # Botón Ejecutar Acción
         self.execute_btn = toga.Button(
@@ -294,7 +294,8 @@ class EventSourcingApp(toga.App):
 
         resul = handle_create_account(cmd)
 
-        self.account_selector.items = load_accounts()
+        self.account_selector.items = database.load_accounts()
+        database.crearCuenta(id_input, ow_input)
 
         # self.refresh_balance()
         self.gestion_mensaje_info(resul)
@@ -347,10 +348,33 @@ class EventSourcingApp(toga.App):
 
             handle_close_account(cmd)
 
-        self.refresh_balance()
+        self.refresh_balance()  
+    
+    def gestionCuentaAlDia(self, accion, cantidad):
+        logging.info("into de gestion Cuenta Al Dia.")
+        print("into de gestion Cuenta Al Dia.")
 
+        if accion.value == "crear":
+            create_account()
+
+        elif accion.value == "depositar":
+            print("Jump-2_handle_deposit")
+ 
+        elif accion.value == "retirar":
+            print("Jump-2_handle_withdraw")
+
+
+        elif accion.value == "transferencia":
+            print("Jump-2_handle_Transfer")
+
+        elif accion.value == "cerrar":
+            print("Jump-2_handle_Transfer")
+
+    def calculoEventosACuenta(self):    
+        logging.info("Calculo Eventos A Cuenta.")
+        print("Calculo Eventos A Cuenta")
+    
     def refresh_balance(self):
-
         acc = load_account(self.account_id)
 
         self.label_info.text = (
