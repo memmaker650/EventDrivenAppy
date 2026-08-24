@@ -20,15 +20,40 @@ print("Arrancando aplicación...")
 class EventSourcingApp(toga.App):
     estadoApp = "info"
     estadoTexto = "Texto de prueba"
-    action = ""
+    action_selector = toga.Selection()
 
-    def account_changed(self, widget):       
+    def account_changed(self, widget):  
+        print("Dentro de Account_Changed")
+        logging.info("Dentro de Account_Changed")
+
         self.account_id = widget.value
 
         self.refresh_balance()
 
-    def action_changed(self, widget):       
-        self.action = widget.value
+    def action_changed(self, widget):
+        print("Dentro de Action_Changed")
+        logging.info("Dentro de Action_Changed")
+
+        accion = widget.value
+        print("Acción marcada: ", accion)
+        print("WActión:", widget.value)
+
+        # Ocultar todo por defecto
+        self.amount_input.style.visibility = "hidden"
+        self.transfer_account_selector.style.visibility = "hidden"
+
+        # Crear y cerrar: nada
+        if accion in ("crear", "cerrar"):
+            pass
+
+        # Depositar, retirar y pago_tarjeta: solo cantidad
+        elif accion in ("depositar", "retirar", "pago_tarjeta"):
+            self.amount_input.style.visibility = "visible"
+
+        # Transferencia: cantidad + cuenta destino
+        elif accion == "transferencia":
+            self.amount_input.style.visibility = "visible"
+            self.transfer_account_selector.style.visibility = "visible" 
 
     def defineEstadoApp(self, estado, texto):       
         self.estadoApp = estado
@@ -82,9 +107,9 @@ class EventSourcingApp(toga.App):
             on_press=lambda widget: self.create_account(widget, self.account_input, self.owner_input)
         )   
 
-        self.acction_selector = toga.Selection(
+        self.action_selector = toga.Selection(
             items=["crear", "depositar", "retirar", "transferencia", "cerrar"],
-            on_change=self.account_changed
+            on_change=self.action_changed
         )
 
         self.execute_btn = toga.Button(
@@ -107,10 +132,36 @@ class EventSourcingApp(toga.App):
         )
         self.account_selector.items = load_accounts()
 
+        self.accion_label = toga.Label(
+            "Acción Tipo Evento :",
+            style=Pack(margin=10)
+            )
         self.acction_selector = toga.Selection(
             items=["crear", "depositar", "retirar", "transferencia", "pago_tarjeta", "cerrar"],
             on_change=self.action_changed
         )
+
+        # Cantidad
+        self.amount_input = toga.TextInput(
+            placeholder="Cantidad",
+            style=Pack(width=200)
+        )
+
+        # Selector de cuenta destino (para transferencia)
+        self.label_destino = toga.Label(
+            "Cuenta destino :",
+            style=Pack(margin=10)
+            )       
+        self.transfer_account_selector = toga.Selection(
+            items=[],
+            on_change=self.account_changed
+        )
+        self.transfer_account_selector.items = load_accounts()
+
+        # Ocultos inicialmente
+        self.amount_input.style.visibility = "hidden"
+        self.label_destino.style.visibility = "hidden"
+        self.transfer_account_selector.style.visibility = "hidden"
 
         self.btn_cuentas = toga.Button(
             "Ver cuentas",
@@ -131,8 +182,12 @@ class EventSourcingApp(toga.App):
                 self.espacio,
                 self.separador,
                 self.espacio,
-                self.account_selector, 
+                self.account_selector,
+                self.accion_label, 
                 self.acction_selector,
+                self.amount_input,
+                self.label_destino,
+                self.transfer_account_selector,
                 self.execute_btn,
                 self.espacio,
                 self.espacio,
@@ -151,6 +206,7 @@ class EventSourcingApp(toga.App):
 
         self.refresh_balance()
 
+    # Abrir nueva ventana para mostrar estado de cuenta y movimientos.
     def abrir_ventana_cuentas(self, widget):
         logging.info("Dentro de ventana sobre cuentas.")
         # Nueva ventana
