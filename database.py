@@ -50,28 +50,35 @@ def create_AccountTable():
     conn.commit()
     conn.close() 
 
+# Buscar info sobre una cuenta.
 def load_accountInfo(cuenta):
+    conn = get_connection()
     cursor = conn.cursor()
+
+    cuenta = cuenta[0]
 
     cursor.execute("""
         SELECT account_id,
-            titular,
-            saldo,
-            estado,
-            ultimo_movimiento
-        FROM account
-        where account_id = ?
-    """,            
-    (
-        cuenta,
-    ),)
+               name,
+               money,
+               state
+        FROM accounts
+        WHERE account_id = ?
+    """, 
+    (cuenta,))
 
-    datos = cursor.fetchall() 
+    datos = cursor.fetchone()
 
+    conn.close()
+
+    return datos
+
+# Método para crear cuenta en la tabla ACCOUTS
 def crearCuenta(accid, owner):
     conn = get_connection()
 
     fechaActual = datetime.now()
+    print("accidDB:", accid)
 
     conn.execute(
         """
@@ -85,8 +92,8 @@ def crearCuenta(accid, owner):
         VALUES (?, ?, ?, ?, ?)
         """,
         (
-            accid.value,
-            owner.value,
+            accid,
+            owner,
             fechaActual, 
             "open",
             0.0,
@@ -108,7 +115,9 @@ def update_accountMoney(dinero, cuenta):
         dinero, cuenta,
     ),)
 
-    datos = cursor.fetchall()        
+    datos = cursor.fetchall()  
+
+    conn.close()      
 
 def create_Account_states():
     conn = get_connection()
@@ -259,6 +268,7 @@ def save_event(aggregate_id, event_type, event_data):
     finally:
         conn.close()
 
+# Cargar los eventos de un id de una cuenta.
 def load_events(aggregate_id):
     conn = get_connection()
 
@@ -276,6 +286,41 @@ def load_events(aggregate_id):
     conn.close()
 
     return rows
+
+# Cargar los eventos de un id de una cuenta.
+def load_diffIDAccountInEvents():
+    conn = get_connection()
+
+    cur = conn.execute(
+        """
+        SELECT DISTINCT(aggregate_id)
+        FROM event_store
+        ORDER BY id asc
+        """,
+    )
+
+    rows = cur.fetchall()
+    conn.close()
+
+    return rows
+
+# Cargar los eventos de un id de una cuenta.
+def load_ownerForAccountInEvent(cuenta):
+    conn = get_connection()
+
+    print("DB cuenta: ", cuenta)
+    cur = conn.execute("""
+        SELECT json_extract(event_data, '$.owner')
+        FROM event_store
+        WHERE aggregate_id = ?  
+        AND event_type = "AccountCreated"
+        """, (cuenta,))
+
+    owner = cur.fetchone()
+    print("DB Duegno: ", owner)
+    conn.close()
+
+    return owner[0] if owner else None    
 
 def loadMaxAccountID():
     conn = get_connection()

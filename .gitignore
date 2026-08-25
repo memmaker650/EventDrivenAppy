@@ -10,3 +10,5 @@ __pycache__/main.cpython-314.pyc
 *.log
 
 events.db
+
+events.db-journal

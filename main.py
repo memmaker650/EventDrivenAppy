@@ -26,6 +26,7 @@ class EventSourcingApp(toga.App):
     estadoApp = "info"
     estadoTexto = "Texto de prueba"
     action_selector = toga.Selection()
+    boton_execute = False
 
     def account_changed(self, widget):  
         print("Dentro de Account_Changed")
@@ -229,7 +230,7 @@ class EventSourcingApp(toga.App):
             items=[],
             on_change=self.account_changed
         )
-        self.account_selector.items = load_accounts()
+        self.account_selector.items = database.load_accounts()
 
         # Datos de ejemplo
         datos = [
@@ -267,38 +268,79 @@ class EventSourcingApp(toga.App):
             style=Pack(flex=1)
         )
 
+        self.btn_CheckEvents = toga.Button(
+            "Check Eventos-Cuentas",
+            on_press=self.calculoEventosACuenta,
+            style=Pack(margin=10)
+        )
+
         box.add(titulo)
         box.add(self.account_selector)
         box.add(tabla)
         box.add(self.espacio)
+        box.add(self.btn_CheckEvents)
 
         ventana.content = box
         ventana.show()   
 
     def create_account(self, widget, id_input, ow_input):
         logging.info("Dentro de create_account.")
-        owner = ow_input.value
+        if isinstance(ow_input, str):
+            owner = ow_input
+        else:
+            if ow_input is not None:
+                owner = ow_input.value
+            else:
+                self.label_info.text = "Error Crear Cuenta, dueño no rellenado." 
+                return
         print("Owner: ", owner)
+        print("ACC-id: ", id_input)
+
+        if not owner:
+            self.label_info.text = "Debe indicar un nombre"
+            print("Debe indicar un nombre")
+            return
+        
+        self.account_id = id_input.value   
+        
+        if self.boton_execute:
+            cmd = CreateAccount(
+                self.account_id,
+                owner
+            )
+
+            resul = handle_create_account(cmd)
+
+            self.account_selector.items = database.load_accounts()
+        database.crearCuenta(self.account_id, owner)
+
+        # self.refresh_balance()
+        # self.gestion_mensaje_info(resul)
+
+    def create_account_block(self, id_input, ow_input):
+        logging.info("Dentro de create_account_block.")
+        if isinstance(ow_input, str):
+            owner = ow_input
+        else:
+            if ow_input is not None:
+                owner = ow_input.value
+            else:
+                self.label_info.text = "Error Crear Cuenta, dueño no rellenado." 
+                return
+        print("Owner: ", owner)
+        print("ACC-id: ", id_input)
 
         if not owner:
             self.label_info.text = "Debe indicar un nombre"
             print("Debe indicar un nombre")
             return
 
-        self.account_id = id_input.value    
+        self.account_id = id_input  
 
-        cmd = CreateAccount(
-            self.account_id,
-            owner
-        )
-
-        resul = handle_create_account(cmd)
-
-        self.account_selector.items = database.load_accounts()
-        database.crearCuenta(id_input, ow_input)
+        database.crearCuenta(self.account_id, owner)
 
         # self.refresh_balance()
-        self.gestion_mensaje_info(resul)
+        # self.gestion_mensaje_info(resul)    
 
     def ejecutarAccion(self, widget, accion, origen, cantidad, destino):
         logging.info("into de ejecutarAccion.")
@@ -309,10 +351,15 @@ class EventSourcingApp(toga.App):
         print("Cantidad: ", cantidad.value)
         print("Destino: ", destino.value)
 
+        self.boton_execute = True
+
         self.account_id = self.account_selector.value
 
         if accion.value == "crear":
-            create_account()
+            if self.owner_input == "":
+                self.label_info.text("Introducir Nombre Titular.")
+            else:
+                self.create_account(None, origen.value, self.owner_input)
 
         elif accion.value == "depositar":
             print("Jump-2_handle_deposit")
@@ -348,7 +395,8 @@ class EventSourcingApp(toga.App):
 
             handle_close_account(cmd)
 
-        self.refresh_balance()  
+        self.refresh_balance()
+        self.boton_execute = False  
     
     def gestionCuentaAlDia(self, accion, cantidad):
         logging.info("into de gestion Cuenta Al Dia.")
@@ -370,9 +418,31 @@ class EventSourcingApp(toga.App):
         elif accion.value == "cerrar":
             print("Jump-2_handle_Transfer")
 
-    def calculoEventosACuenta(self):    
+    # Método para calcular a partir de los eventos que la tabla ACCOUNTS está al día.
+    #--------------------------------------------------------------------------------------
+    def calculoEventosACuenta(self, widget):    
         logging.info("Calculo Eventos A Cuenta.")
         print("Calculo Eventos A Cuenta")
+        
+        # Traer info de la tabla Eventos.
+        idsEvents = database.load_diffIDAccountInEvents()
+        print(idsEvents)
+
+        for x in idsEvents:
+            datos = database.load_accountInfo(x)
+
+            if not datos:      # datos == []
+                print("La cuenta no existe")
+                x = x[0]
+                print("ID no creado:", x)
+                duegno = database.load_ownerForAccountInEvent(x)
+                print("Dueño: ", duegno)
+                self.create_account_block(x, duegno)
+            else:
+                print(datos)
+        
+        print("TERMINADO TRATAMIENTO EN BLOQUE !!")
+        self.label_info.text = ("TERMINADO TRATAMIENTO EN BLOQUE !!")
     
     def refresh_balance(self):
         acc = load_account(self.account_id)
