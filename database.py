@@ -55,19 +55,21 @@ def load_accountInfo(cuenta):
     conn = get_connection()
     cursor = conn.cursor()
 
-    cuenta = cuenta[0]
+    print("cuenta Buscar: ", cuenta)
 
     cursor.execute("""
         SELECT account_id,
                name,
                money,
-               state
+               state,
+               created_at
         FROM accounts
         WHERE account_id = ?
     """, 
     (cuenta,))
 
     datos = cursor.fetchone()
+    print("Cuenta Info Obtenida: ", datos)
 
     conn.close()
 
@@ -103,7 +105,7 @@ def crearCuenta(accid, owner):
     conn.commit()
     conn.close()
 
-def update_accountMoney(dinero, cuenta):
+def load_accountMoney(dinero, cuenta):
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -283,6 +285,27 @@ def load_events(aggregate_id):
     )
 
     rows = cur.fetchall()
+    print("Eventos:  ", rows)
+    conn.close()
+
+    return rows
+
+# Cargar los eventos de un id de una cuenta.
+def load_eventsFull(aggregate_id):
+    conn = get_connection()
+
+    cur = conn.execute(
+        """
+        SELECT aggregate_id, event_type, event_data, created_at
+        FROM event_store
+        WHERE aggregate_id = ?
+        ORDER BY id
+        """,
+        (aggregate_id,),
+    )
+
+    rows = cur.fetchall()
+    print("Eventos:  ", rows)
     conn.close()
 
     return rows

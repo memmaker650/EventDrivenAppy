@@ -215,6 +215,7 @@ class EventSourcingApp(toga.App):
         self.refresh_balance()
 
     # Abrir nueva ventana para mostrar estado de cuenta y movimientos.
+    #-------------------------------------------------------------------------
     def abrir_ventana_cuentas(self, widget):
         logging.info("Dentro de ventana sobre cuentas.")
         # Nueva ventana
@@ -227,30 +228,36 @@ class EventSourcingApp(toga.App):
             "Listado de cuentas bancarias",
             style=Pack(margin_bottom=10)
         )
-        
+        self.account_selector = "ACC-001"
         self.account_selector = toga.Selection(
             items=[],
             on_change=self.account_changed
         )
         self.account_selector.items = database.load_accounts()
+        print("Default account: ", self.account_selector.value)
+        cuenta = database.load_accountInfo(self.account_selector.value)
 
-        # Datos de ejemplo
-        datos = [
-            (1, "Juan Pérez", 1250.50, "Activa", "2026-08-20"),
-            (2, "Ana García", 350.00, "Activa", "2026-08-19"),
-            (3, "Pedro López", 0.00, "Bloqueada", "2026-08-15"),
+        # Datos de la cuenta
+        datos_cuenta = [
+            (
+            cuenta[0],
+            cuenta[1],
+            cuenta[4],
+            cuenta[3],
+            cuenta[2],
+            )
         ]
 
         # Tabla
-        tabla = toga.Table(
+        tabla_cuenta = toga.Table(
             columns=[
                 "ID cuenta",
                 "Titular",
                 "Saldo",
                 "Estado",
-                "Último movimiento"
+                "Fecha creación"
                 ],
-            data=datos,
+            data=datos_cuenta,
             style=Pack(flex=1)
         )
 
@@ -258,15 +265,26 @@ class EventSourcingApp(toga.App):
             style=toga.style.Pack(height=20)
         )
 
+        eventos = database.load_eventsFull(self.account_selector.value)
+
+        datos_eventos = [
+            (
+            evento[0],
+            evento[1],
+            evento[2],
+            evento[3],
+            )
+            for evento in eventos
+            ]
+
         tablaEventos = toga.Table(
             columns=[
                 "ID cuenta",
-                "Titular",
-                "Saldo",
-                "Estado",
-                "Último movimiento"
+                "Tipo evento",
+                "Evento",
+                "Fecha creación",
                 ],
-            data=datos,
+            data=datos_eventos,
             style=Pack(flex=1)
         )
 
@@ -278,8 +296,9 @@ class EventSourcingApp(toga.App):
 
         box.add(titulo)
         box.add(self.account_selector)
-        box.add(tabla)
+        box.add(tabla_cuenta)
         box.add(self.espacio)
+        box.add(tablaEventos)
         box.add(self.btn_CheckEvents)
 
         ventana.content = box
