@@ -24,7 +24,7 @@ print("Arrancando aplicación...")
 
 class EventSourcingApp(toga.App):
     estadoApp = "info"
-    estadoTexto = "Texto de prueba"
+    estadoTexto = "Inicial"
     action_selector = toga.Selection()
     boton_execute = False
 
@@ -85,6 +85,8 @@ class EventSourcingApp(toga.App):
             placeholder="Número de cuenta",
             style=Pack(margin=10)
         )
+
+        self.label_info = toga.Label("Inicial")
 
         if self.estadoApp == "info":
             self.label_info = toga.Label(
@@ -439,10 +441,31 @@ class EventSourcingApp(toga.App):
                 print("Dueño: ", duegno)
                 self.create_account_block(x, duegno)
             else:
-                print(datos)
+                montante = 0.0
+                print("Dentro cálculo montante FINAL.")
+                # Cuenta creada, cálculo del montante de la cuenta.
+                cargas = database.load_moneyForAccountInEvent(x)
+                if cargas is None:
+                    logging.info("Es None")
+                elif not cargas:
+                    logging.info("Está vacío")
+                else:
+                    for nombre, valor in cargas:
+                        if nombre == "MoneyDeposited":
+                            montante += float(valor)
+                        else:
+                            montante -= float(valor)
+
+                resultado = database.store_moneyForAccount(montante, x)
+                if resultado == 1:
+                    self.label_info = "Montante actualizado !!"
+                else:
+                    self.label_info = "Error guardado Montante - KO !!"
+
         
         print("TERMINADO TRATAMIENTO EN BLOQUE !!")
-        self.label_info.text = ("TERMINADO TRATAMIENTO EN BLOQUE !!")
+        logging.info("TERMINADO TRATAMIENTO EN BLOQUE !!")
+        self.label_info = ("TERMINADO TRATAMIENTO EN BLOQUE !!")
     
     def refresh_balance(self):
         acc = load_account(self.account_id)

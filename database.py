@@ -320,7 +320,48 @@ def load_ownerForAccountInEvent(cuenta):
     print("DB Duegno: ", owner)
     conn.close()
 
-    return owner[0] if owner else None    
+    return owner[0] if owner else None
+
+# Retornar los eventos de un id de una cuenta, no AccountCreated
+def load_moneyForAccountInEvent(cuenta):
+    conn = get_connection()
+
+    cuenta = cuenta[0]
+
+    print("DB cuenta: ", cuenta)
+    cur = conn.execute("""
+        SELECT event_type, json_extract(event_data, '$.amount')
+        FROM event_store
+        WHERE aggregate_id = ?  
+        AND event_type NOT IN ("AccountCreated", "CloseAccount")
+        """, (cuenta,))
+
+    money = cur.fetchall()
+    print("DB montante: ", money)
+    conn.close()
+
+    return money if money else None 
+
+# Cargar los eventos de un id de una cuenta.
+def store_moneyForAccount(dinero, cuenta):
+    conn = get_connection()
+
+    cuenta = cuenta[0]
+
+    print("DB cuenta: ", cuenta)
+    cur = conn.execute("""
+        UPDATE accounts
+        SET money = ?
+        WHERE account_id = ?  
+        """, (dinero, cuenta,))
+
+    conn.commit()
+
+    print("Filas actualizadas:", cur.rowcount)
+
+    conn.close()         
+
+    return cur.rowcount 
 
 def loadMaxAccountID():
     conn = get_connection()
