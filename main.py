@@ -8,17 +8,7 @@ from datetime import datetime
 
 fecha = datetime.now().strftime("%Y%m%d")
 
-import database
-from commands import CreateAccount, DepositMoney, MoneyWithDraw, TransferMoney, PaymentCard, Overdraft
-from domain import (
-    handle_create_account,
-    handle_deposit,
-    handle_withdraw,
-    handle_moneyTransfer,
-    handle_PaymentCard,
-    handle_close_account,
-    load_account
-)
+import gestionDatos
 
 print("Arrancando aplicación...")
 
@@ -27,6 +17,7 @@ class EventSourcingApp(toga.App):
     estadoTexto = "Inicial"
     action_selector = toga.Selection()
     boton_execute = False
+    gD = gestionDatos.gestionDatos()
 
     def account_changed(self, widget):  
         print("Dentro de Account_Changed")
@@ -34,7 +25,7 @@ class EventSourcingApp(toga.App):
 
         self.account_id = widget.value
 
-        self.refresh_balance()
+        self.gD.refresh_balance()
 
     def action_changed(self, widget):
         print("Dentro de Action_Changed")
@@ -52,8 +43,11 @@ class EventSourcingApp(toga.App):
             pass
 
         # Depositar, retirar y pago_tarjeta: solo cantidad
-        elif accion in ("depositar", "retirar", "pago_tarjeta"):
+        elif accion in ("depositar", "retirar"):
             self.amount_input.style.visibility = "visible"
+        elif accion in ("pago_tarjeta"): 
+            self.amount_input.style.visibility = "visible"   
+            self.shop_input.style.visibility = "visible"
 
         # Transferencia: cantidad + cuenta destino
         elif accion == "transferencia":
@@ -66,9 +60,9 @@ class EventSourcingApp(toga.App):
 
     def startup(self):
         logging.info("Dentro startup")
-        database.init_db()
-
-        self.account_id = f"ACC-{database.loadMaxAccountID()+1:03d}"
+        
+        # Inicio la BDD y operaciones iniciales
+        self.account_id = self.gD.initBusiness()
 
         self.titulo = toga.Label(
             "EggBank - Operaciones por eventos.",
@@ -111,13 +105,8 @@ class EventSourcingApp(toga.App):
 
         create_btn = toga.Button(
             "Crear cuenta",
-            on_press=lambda widget: self.create_account(widget, self.account_input, self.owner_input)
+            on_press=lambda widget: self.gD.create_account(widget, self.account_input.value, self.owner_input)
         )   
-
-        self.action_selector = toga.Selection(
-            items=["crear", "depositar", "retirar", "transferencia", "cerrar"],
-            on_change=self.action_changed
-        )
 
         self.separador = toga.Box(
             style=Pack(
@@ -132,7 +121,7 @@ class EventSourcingApp(toga.App):
             items=[],
             on_change=self.account_changed
         )
-        self.account_selector.items = database.load_accounts()
+        self.account_selector.items = self.gD.load_accounts()
 
         self.accion_label = toga.Label(
             "Acción Tipo Evento :",
@@ -149,6 +138,12 @@ class EventSourcingApp(toga.App):
             style=Pack(width=200)
         )
 
+        # Tienda
+        self.shop_input = toga.TextInput(
+            placeholder="Tienda",
+            style=Pack(width=200)
+        )
+
         # Selector de cuenta destino (para transferencia)
         self.label_destino = toga.Label(
             "Cuenta destino :",
@@ -158,16 +153,17 @@ class EventSourcingApp(toga.App):
             items=[],
             on_change=self.account_changed
         )
-        self.transfer_account_selector.items = database.load_accounts()
+        self.transfer_account_selector.items = self.gD.load_accounts()
 
         # Botón Ejecutar Acción
         self.execute_btn = toga.Button(
             "Ejecutar",
-            on_press=lambda widget: self.ejecutarAccion(widget, self.action_selector, self.account_selector, self.amount_input, self.transfer_account_selector)
+            on_press=lambda widget: self.gD.ejecutarAccion(widget, self.action_selector.value, self.account_selector.value, self.amount_input.value, self.transfer_account_selector.value, None, self.shop_input.value)
         )
 
         # Ocultos inicialmente
         self.amount_input.style.visibility = "hidden"
+        self.shop_input.style.visibility = "hidden"
         self.label_destino.style.visibility = "hidden"
         self.transfer_account_selector.style.visibility = "hidden"
 
@@ -194,6 +190,7 @@ class EventSourcingApp(toga.App):
                 self.accion_label, 
                 self.action_selector,
                 self.amount_input,
+                self.shop_input,
                 self.label_destino,
                 self.transfer_account_selector,
                 self.execute_btn,
@@ -212,7 +209,7 @@ class EventSourcingApp(toga.App):
         self.main_window.content = box
         self.main_window.show()
 
-        self.refresh_balance()
+        # self.refresh_balance()
 
     # Abrir nueva ventana para mostrar estado de cuenta y movimientos.
     #-------------------------------------------------------------------------
@@ -290,7 +287,7 @@ class EventSourcingApp(toga.App):
 
         self.btn_CheckEvents = toga.Button(
             "Check Eventos-Cuentas",
-            on_press=self.calculoEventosACuenta,
+            on_press=gD.calculoEventosACuenta,
             style=Pack(margin=10)
         )
 
@@ -302,208 +299,7 @@ class EventSourcingApp(toga.App):
         box.add(self.btn_CheckEvents)
 
         ventana.content = box
-        ventana.show()   
-
-    def create_account(self, widget, id_input, ow_input):
-        logging.info("Dentro de create_account.")
-        if isinstance(ow_input, str):
-            owner = ow_input
-        else:
-            if ow_input is not None:
-                owner = ow_input.value
-            else:
-                self.label_info.text = "Error Crear Cuenta, dueño no rellenado." 
-                return
-        print("Owner: ", owner)
-        print("ACC-id: ", id_input)
-
-        if not owner:
-            self.label_info.text = "Debe indicar un nombre"
-            print("Debe indicar un nombre")
-            return
-        
-        self.account_id = id_input.value   
-        
-        if self.boton_execute:
-            cmd = CreateAccount(
-                self.account_id,
-                owner
-            )
-
-            resul = handle_create_account(cmd)
-
-            self.account_selector.items = database.load_accounts()
-        database.crearCuenta(self.account_id, owner)
-
-        # self.refresh_balance()
-        # self.gestion_mensaje_info(resul)
-
-    def create_account_block(self, id_input, ow_input):
-        logging.info("Dentro de create_account_block.")
-        if isinstance(ow_input, str):
-            owner = ow_input
-        else:
-            if ow_input is not None:
-                owner = ow_input.value
-            else:
-                self.label_info.text = "Error Crear Cuenta, dueño no rellenado." 
-                return
-        print("Owner: ", owner)
-        print("ACC-id: ", id_input)
-
-        if not owner:
-            self.label_info.text = "Debe indicar un nombre"
-            print("Debe indicar un nombre")
-            return
-
-        self.account_id = id_input  
-
-        database.crearCuenta(self.account_id, owner)
-
-        # self.refresh_balance()
-        # self.gestion_mensaje_info(resul)    
-
-    def ejecutarAccion(self, widget, accion, origen, cantidad, destino):
-        logging.info("into de ejecutarAccion.")
-        print("into de ejecutarAccion.")
-        print("------------------------------")
-        print("Acció: ", accion.value)
-        print("Origen: ", origen.value)
-        print("Cantidad: ", cantidad.value)
-        print("Destino: ", destino.value)
-
-        self.boton_execute = True
-
-        self.account_id = self.account_selector.value
-
-        if accion.value == "crear":
-            if self.owner_input == "":
-                self.label_info.text("Introducir Nombre Titular.")
-            else:
-                self.create_account(None, origen.value, self.owner_input)
-
-        elif accion.value == "depositar":
-            print("Jump-2_handle_deposit")
-            cmd = DepositMoney(
-                origen.value,
-                cantidad.value
-            )
-
-            handle_deposit(cmd)
-        elif accion.value == "retirar":
-            print("Jump-2_handle_withdraw")
-            cmd = MoneyWithDraw(
-                origen.value,
-                cantidad.value
-            )
-
-            handle_withdraw(cmd)
-
-        elif accion.value == "transferencia":
-            print("Jump-2_handle_Transfer")
-            cmd = MoneyTransfer(
-                origen.value,
-                cantidad.value,
-                destino.value
-            )
-
-            handle_moneyTransfer(cmd)    
-
-        elif accion.value == "cerrar":
-            cmd = CloseAccount(
-                origen.value
-            )
-
-            handle_close_account(cmd)
-
-        self.refresh_balance()
-        self.boton_execute = False  
-    
-    def gestionCuentaAlDia(self, accion, cantidad):
-        logging.info("into de gestion Cuenta Al Dia.")
-        print("into de gestion Cuenta Al Dia.")
-
-        if accion.value == "crear":
-            create_account()
-
-        elif accion.value == "depositar":
-            print("Jump-2_handle_deposit")
- 
-        elif accion.value == "retirar":
-            print("Jump-2_handle_withdraw")
-
-
-        elif accion.value == "transferencia":
-            print("Jump-2_handle_Transfer")
-
-        elif accion.value == "cerrar":
-            print("Jump-2_handle_Transfer")
-
-    # Método para calcular a partir de los eventos que la tabla ACCOUNTS está al día.
-    #--------------------------------------------------------------------------------------
-    def calculoEventosACuenta(self, widget):    
-        logging.info("Calculo Eventos A Cuenta.")
-        print("Calculo Eventos A Cuenta")
-        
-        # Traer info de la tabla Eventos.
-        idsEvents = database.load_diffIDAccountInEvents()
-        print(idsEvents)
-
-        for x in idsEvents:
-            datos = database.load_accountInfo(x)
-
-            if not datos:      # datos == []
-                print("La cuenta no existe")
-                x = x[0]
-                print("ID no creado:", x)
-                duegno = database.load_ownerForAccountInEvent(x)
-                print("Dueño: ", duegno)
-                self.create_account_block(x, duegno)
-            else:
-                montante = 0.0
-                print("Dentro cálculo montante FINAL.")
-                # Cuenta creada, cálculo del montante de la cuenta.
-                cargas = database.load_moneyForAccountInEvent(x)
-                if cargas is None:
-                    logging.info("Es None")
-                elif not cargas:
-                    logging.info("Está vacío")
-                else:
-                    for nombre, valor in cargas:
-                        if nombre == "MoneyDeposited":
-                            montante += float(valor)
-                        else:
-                            montante -= float(valor)
-
-                resultado = database.store_moneyForAccount(montante, x)
-                if resultado == 1:
-                    self.label_info = "Montante actualizado !!"
-                else:
-                    self.label_info = "Error guardado Montante - KO !!"
-
-        
-        print("TERMINADO TRATAMIENTO EN BLOQUE !!")
-        logging.info("TERMINADO TRATAMIENTO EN BLOQUE !!")
-        self.label_info = ("TERMINADO TRATAMIENTO EN BLOQUE !!")
-    
-    def refresh_balance(self):
-        acc = load_account(self.account_id)
-
-        self.label_info.text = (
-            f"Titular: {acc.owner} | "
-            f"Saldo: {acc.balance}"
-        )
-
-    def gestion_mensaje_info (self, resultado):
-        logging.info("gestion_mensaje_info")
-        if resultado["ok"]: 
-            estadoApp = "ok"
-            self.label_info.text = resultado["mensaje"]
-            self.label_info.style.color = "green"
-        else:
-            estadoApp = "error"
-            self.label_info.text = "¡ ERROR !" + " " + resultado["mensaje"],
-            self.label_info.style.color = "red" 
+        ventana.show()    
     
 def main():
     log_file = Path(r"C:\Users\Jorge.Vega\Documents\ENABLON-proj\PROYECTOS\EbD\EventDrivenApplication\log\\")

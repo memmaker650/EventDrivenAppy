@@ -25,7 +25,7 @@ class TransferMoney:
         self.amount = amount
         self.To = destiny
 
-class PaymentCard:
+class CardPayment:
     def __init__(self, account_id, amount, shop):
         self.account_id = account_id
         self.amount = amount

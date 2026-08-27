@@ -84,13 +84,13 @@ def handle_moneyTransfer(command):
         }
     )
 
-def handle_PaymentCard(command):
-    print("handle_deposit")
-    logger.info("handle_deposit")
+def handle_CardPayment(command):
+    print("Card Payment")
+    logger.info("handle_Card_Payment")
 
     save_event(
         command.account_id,
-        "PaymentCard",
+        "CardPayment",
         {
             "amount": command.amount,
             "shop": command.shop
@@ -110,8 +110,8 @@ def handle_Overdraft(command):
     )
 
 def handle_close_account(command):
-    print("handle_deposit")
-    logger.info("handle_deposit")
+    print("handle_Close_account")
+    logger.info("handle_Close_account")
 
     save_event(
         command.account_id,

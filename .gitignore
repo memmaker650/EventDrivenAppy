@@ -12,3 +12,5 @@ __pycache__/main.cpython-314.pyc
 events.db
 
 events.db-journal
+
+datos/error/

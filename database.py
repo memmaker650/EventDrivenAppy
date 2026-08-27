@@ -285,7 +285,7 @@ def load_events(aggregate_id):
     )
 
     rows = cur.fetchall()
-    print("Eventos:  ", rows)
+    # print("Eventos:  ", rows)
     conn.close()
 
     return rows
@@ -305,7 +305,7 @@ def load_eventsFull(aggregate_id):
     )
 
     rows = cur.fetchall()
-    print("Eventos:  ", rows)
+    # print("Eventos:  ", rows)
     conn.close()
 
     return rows

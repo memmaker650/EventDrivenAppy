@@ -1,0 +1,26 @@
+[
+    {
+        "aggregate_id": "ACC-005",
+        "event_type": "Moneywithdraw",
+        "event_data": {
+            "account": "ACC-005",
+            "amount": 365
+            }
+    },
+    {
+        "aggregate_id": "ACC-025",
+        "event_type": "AccountCreated",
+        "event_data": {
+            "account": "ACC-025",
+            "owner": "Samuel"
+            }
+    },
+    {
+        "aggregate_id": "ACC-001",
+        "event_type": "MoneyDeposited",
+        "event_data": {
+            "account": "ACC-001",
+            "amount": 130
+            }
+    }
+]
