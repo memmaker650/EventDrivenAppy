@@ -25,7 +25,7 @@ class EventSourcingApp(toga.App):
 
         self.account_id = widget.value
 
-        self.gD.refresh_balance()
+        self.refresh_balance()
 
     def action_changed(self, widget):
         print("Dentro de Action_Changed")
@@ -52,6 +52,7 @@ class EventSourcingApp(toga.App):
         # Transferencia: cantidad + cuenta destino
         elif accion == "transferencia":
             self.amount_input.style.visibility = "visible"
+            self.label_destino.style.visibility = "visible"
             self.transfer_account_selector.style.visibility = "visible" 
 
     def defineEstadoApp(self, estado, texto):       
@@ -117,6 +118,10 @@ class EventSourcingApp(toga.App):
             )
         )
 
+        self.origen_label = toga.Label(
+            "Origen :",
+            style=Pack(margin=10)
+            )
         self.account_selector = toga.Selection(
             items=[],
             on_change=self.account_changed
@@ -186,6 +191,7 @@ class EventSourcingApp(toga.App):
                 self.espacio,
                 self.separador,
                 self.espacio,
+                self.origen_label,
                 self.account_selector,
                 self.accion_label, 
                 self.action_selector,
@@ -299,7 +305,14 @@ class EventSourcingApp(toga.App):
         box.add(self.btn_CheckEvents)
 
         ventana.content = box
-        ventana.show()    
+        ventana.show()
+
+    def refresh_balance(self):
+        # acc = load_account(self.account_id)
+        self.label_info.text = (
+            f"Titular: {acc.owner} | "
+            f"Saldo: {acc.balance}"
+        )    
     
 def main():
     log_file = Path(r"C:\Users\Jorge.Vega\Documents\ENABLON-proj\PROYECTOS\EbD\EventDrivenApplication\log\\")

@@ -93,7 +93,7 @@ class gestionDatos():
         # print("Acció: ", accion.value)
         # print("Origen: ", origen.value)
         # print("Cantidad: ", cantidad.value)
-        # print("Destino: ", destino.value)
+        print("Destino: ", destino)
 
         self.boton_execute = True
 
@@ -101,6 +101,7 @@ class gestionDatos():
 
         if accion == "crear":
             if propietario == "":
+                # Cambiarolo xq no podemos lanzar esto directamente a la GUI así
                 self.label_info.text("Introducir Nombre Titular.")
             else:
                 self.create_account(None, origen, propietario)
@@ -123,8 +124,8 @@ class gestionDatos():
             handle_withdraw(cmd)
 
         elif accion == "transferencia":
-            print("Jump-2_handle_Transfer")
-            cmd = MoneyTransfer(
+            print("Jump-2_handle_MoneyTransfer")
+            cmd = TransferMoney(
                 origen,
                 cantidad,
                 destino
@@ -220,14 +221,6 @@ class gestionDatos():
         print("TERMINADO TRATAMIENTO EN BLOQUE !!")
         logging.info("TERMINADO TRATAMIENTO EN BLOQUE !!")
         self.label_info = ("TERMINADO TRATAMIENTO EN BLOQUE !!")
-    
-    def refresh_balance(self):
-        # acc = load_account(self.account_id)
-
-        self.label_info.text = (
-            f"Titular: {acc.owner} | "
-            f"Saldo: {acc.balance}"
-        )
 
     def gestion_mensaje_info (self, resultado):
         logging.info("gestion_mensaje_info")

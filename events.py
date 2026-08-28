@@ -16,7 +16,7 @@ class MoneyWithDraw:
     def __init__(self, amount):
         self.amount = -amount
 
-class MoneyTransferred:
+class MoneyTransfer:
     def __init__(self, amount, destiny):
         self.amount = amount
         self.destinaton = destiny

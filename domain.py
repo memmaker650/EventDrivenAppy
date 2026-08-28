@@ -71,8 +71,8 @@ def handle_withdraw(command):
     )
 
 def handle_moneyTransfer(command):
-    print("handle_deposit")
-    logger.info("handle_deposit")
+    print("handle_moneyTransfer")
+    logger.info("handle_moneyTransfer")
 
     save_event(
         command.account_id,
@@ -80,7 +80,7 @@ def handle_moneyTransfer(command):
         {
             "account_id": command.account_id,
             "amount": command.amount,
-            "To": command.amount
+            "To": command.To
         }
     )
 
