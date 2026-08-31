@@ -18,6 +18,12 @@ class gestionDatos():
     def load_accounts(self):
         return database.load_accounts()   
 
+    def load_accountInfo(self, cuentaSelec):
+        return database.load_accountInfo(cuentaSelec)    
+
+    def cargaEventosCompletos(self, cuentaSelec):
+        return database.load_eventsFull(cuentaSelec)       
+
     def domainAccount(self, account):
         return domain.load_account(account)    
 

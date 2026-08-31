@@ -1,10 +1,12 @@
 import os
 import toga
 from toga.style import Pack
-from toga.style.pack import COLUMN
+from toga.style.pack import COLUMN, ROW
 import logging
 from pathlib import Path
 from datetime import datetime
+
+from plyer import notification
 
 fecha = datetime.now().strftime("%Y%m%d")
 
@@ -53,6 +55,13 @@ class EventSourcingApp(toga.App):
             self.amount_input.style.visibility = "visible"
             self.label_destino.style.visibility = "visible"
             self.transfer_account_selector.style.visibility = "visible" 
+
+        notification.notify(
+            title="Mi aplicación",
+            message="Tienes una nueva tarea pendiente",
+            app_name="EventBasedApPy",
+            timeout=10
+)    
 
     def defineEstadoApp(self, estado, texto):       
         self.estadoApp = estado
@@ -107,6 +116,20 @@ class EventSourcingApp(toga.App):
             "Crear cuenta",
             on_press=lambda widget: self.gD.create_account(widget, self.account_input.value, self.owner_input)
         )   
+
+        btn_hypotekas = toga.Button(
+            "Info Hipotecas",
+            style=Pack(width=200),
+            background_color="green",
+            on_press=self.ventana_infoHipoteca)
+
+        contenedor_botonhyp = toga.Box(
+            children=[
+                toga.Box(style=Pack(flex=1)), # Espacio flexible
+                btn_hypotekas
+                ],
+            style=Pack(direction=ROW, margin=10),
+        )
 
         self.separador = toga.Box(
             style=Pack(
@@ -198,6 +221,7 @@ class EventSourcingApp(toga.App):
                 self.shop_input,
                 self.label_destino,
                 self.transfer_account_selector,
+                contenedor_botonhyp,
                 self.execute_btn,
                 self.espacio,
                 self.espacio,
@@ -235,9 +259,9 @@ class EventSourcingApp(toga.App):
             items=[],
             on_change=self.account_changed
         )
-        self.account_selector.items = database.load_accounts()
+        self.account_selector.items = self.gD.load_accounts()
         print("Default account: ", self.account_selector.value)
-        cuenta = database.load_accountInfo(self.account_selector.value)
+        cuenta = self.gD.load_accountInfo(self.account_selector.value)
 
         # Datos de la cuenta
         datos_cuenta = [
@@ -267,7 +291,7 @@ class EventSourcingApp(toga.App):
             style=toga.style.Pack(height=20)
         )
 
-        eventos = database.load_eventsFull(self.account_selector.value)
+        eventos = self.gD.cargaEventosCompletos(self.account_selector.value)
 
         datos_eventos = [
             (
@@ -292,7 +316,7 @@ class EventSourcingApp(toga.App):
 
         self.btn_CheckEvents = toga.Button(
             "Check Eventos-Cuentas",
-            on_press=gD.calculoEventosACuenta,
+            on_press=self.gD.calculoEventosACuenta,
             style=Pack(margin=10)
         )
 
@@ -305,6 +329,56 @@ class EventSourcingApp(toga.App):
 
         ventana.content = box
         ventana.show()
+
+    # Abrir nueva ventana para mostrar detalles de las cuetas con créditos o hipotecas.
+    #------------------------------------------------------------------------------------
+    def ventana_infoHipoteca(self, widget):
+        self.main_window = toga.MainWindow(title=self.formal_name)
+
+        # Desplegable
+        self.combo = toga.Selection(
+                items=["Opción 1", "Opción 2", "Opción 3"],
+                style=Pack(padding=5)
+                )
+
+        # Primera tabla
+        self.tabla_superior = toga.Table(
+            columns=["ID", "Nombre"],
+            data=[
+            [1, "Juan"],
+            [2, "María"],
+            ],
+            style=Pack(flex=1, padding=5)
+            )
+
+        # Label
+        self.label = toga.Label(
+            "Datos de entrada",
+            style=Pack(padding=(10, 5))
+        )
+
+        # Segunda tabla
+        self.tabla_inferior = toga.Table(
+        columns=["Campo", "Valor"],
+        data=[
+        ["Producto", ""],
+        ["Cantidad", ""],
+        ],
+        style=Pack(flex=1, padding=5)
+        )
+
+        # Contenedor principal
+        caja = toga.Box(
+            style=Pack(direction=COLUMN, padding=10)
+            )
+
+        caja.add(self.combo)
+        caja.add(self.tabla_superior)
+        caja.add(self.label)
+
+        caja.add(self.tabla_inferior)
+        self.main_window.content = caja
+        self.main_window.show()
 
     def refresh_balance(self):
         acc = self.gD.domainAccount(self.account_id)
