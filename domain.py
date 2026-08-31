@@ -17,6 +17,10 @@ class BankAccount:
 
         elif event_type == "MoneyDeposited":
             self.balance += int(data["amount"])
+        elif event_type == "Moneywithdraw":
+            self.balance -= int(data["amount"])
+        elif event_type == "CardPayment":
+            self.balance -= int(data["amount"])    
 
 
 def load_account(account_id):
@@ -80,7 +84,7 @@ def handle_moneyTransfer(command):
         {
             "account_id": command.account_id,
             "amount": command.amount,
-            "To": command.To
+            "To": command.To  
         }
     )
 
@@ -96,6 +100,58 @@ def handle_CardPayment(command):
             "shop": command.shop
         }
     )
+
+def handle_demandMortgage(command):
+    print("Demand Mortgage")
+    logger.info("handle_Demand_Mortgage")
+
+    save_event(
+        command.account_id,
+        "demandMortgage",
+        {
+            "account_id": command.account_id,
+            "amount": command.amount,
+        }
+    )
+
+def handle_mortgagePayment(command):
+    print("Mortgage Payment")
+    logger.info("handle_Mortgage_Payment")
+
+    save_event(
+        command.account_id,
+        "mortgagePayment",
+        {
+            "account_id": command.account_id,
+            "amount": command.amount,
+        }
+    ) 
+
+def handle_demandCredit(command):
+    print("demand Credit")
+    logger.info("handle_demandCredit")
+
+    save_event(
+        command.account_id,
+        "demandCredit",
+        {
+            "account_id": command.account_id,
+            "amount": command.amount,
+        }
+    )  
+
+def handle_CreditPayment(command):
+    print("Credit Payment")
+    logger.info("handle_CreditPayment")
+
+    save_event(
+        command.account_id,
+        "CreditPayment",
+        {
+            "account_id": command.account_id,
+            "amount": command.amount,
+        }
+    )    
 
 def handle_Overdraft(command):
     print("handle_deposit")

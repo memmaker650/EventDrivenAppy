@@ -2,16 +2,8 @@ import os
 import logging
 
 import database
-from commands import CreateAccount, DepositMoney, MoneyWithDraw, TransferMoney, CardPayment, Overdraft
-from domain import (
-    handle_create_account,
-    handle_deposit,
-    handle_withdraw,
-    handle_moneyTransfer,
-    handle_CardPayment,
-    handle_close_account,
-    load_account
-)
+import commands 
+import domain
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +17,9 @@ class gestionDatos():
 
     def load_accounts(self):
         return database.load_accounts()   
+
+    def domainAccount(self, account):
+        return domain.load_account(account)    
 
     def create_account(self, widget, id_input, ow_input):
         logging.info("Dentro de create_account.")
@@ -108,7 +103,7 @@ class gestionDatos():
 
         elif accion == "depositar":
             print("Jump-2_handle_deposit")
-            cmd = DepositMoney(
+            cmd = commands.DepositMoney(
                 origen,
                 cantidad
             )
@@ -116,39 +111,75 @@ class gestionDatos():
             handle_deposit(cmd)
         elif accion == "retirar":
             print("Jump-2_handle_withdraw")
-            cmd = MoneyWithDraw(
+            cmd = commands.MoneyWithDraw(
                 origen,
                 cantidad
             )
 
-            handle_withdraw(cmd)
+            domain.handle_withdraw(cmd)
+
+        elif accion == "pedir_hipoteca":
+            print("Jump-2_handle_DemandMortgage")
+            cmd = commands.DemandMortgage(
+                origen,
+                cantidad
+            )
+
+            domain.handle_demandMortgage(cmd) 
+        
+        elif accion == "pago_hipoteca":
+            print("Jump-2_handle_MortgagePayment")
+            cmd = commands.MortgagePayment(
+                origen,
+                cantidad
+            )
+
+            domain.handle_mortgagePayment(cmd)
+
+        elif accion == "pedir_crédito":
+            print("Jump-2_handle_DemandCredit")
+            cmd = commands.DemandCredit(
+                origen,
+                cantidad
+            )
+
+            domain.handle_demandCredit(cmd)
+        
+        elif accion == "pago_crédito":
+            print("Jump-2_handle_CreditPayment")
+            cmd = commands.CreditPayment(
+                origen,
+                cantidad
+            )
+
+            domain.handle_CreditPayment(cmd)
 
         elif accion == "transferencia":
             print("Jump-2_handle_MoneyTransfer")
-            cmd = TransferMoney(
+            cmd = commands.TransferMoney(
                 origen,
                 cantidad,
                 destino
             )
 
-            handle_moneyTransfer(cmd)    
+            domain.handle_moneyTransfer(cmd)    
 
         elif accion == "pago_tarjeta":
             print("Jump-2_handle_CardPayment")
-            cmd = CardPayment(
+            cmd = commands.CardPayment(
                 origen,
                 cantidad,
                 tienda
             )
 
-            handle_CardPayment(cmd)    
+            domain.handle_CardPayment(cmd)    
 
         elif accion == "cerrar":
             cmd = CloseAccount(
                 origen
             )
 
-            handle_close_account(cmd)
+            domain.handle_close_account(cmd)
 
         # self.refresh_balance()
         self.boton_execute = False

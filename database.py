@@ -150,8 +150,6 @@ def check_state_names():
     c = cur.fetchone()[0]
     conn.close()
 
-    print("COUNT: ",c)
-
     return c  
 
 def fill_account_states():
@@ -435,14 +433,31 @@ def check_num_accounts_user():
 
     return cuentas
 
-# Complejo, deben ser cuentas idénticas, con mismos movimientos.
-def check_dup_accounts():
+def return_MoneyTransfer():
     logger.info("check_dup_accounts")
     conn = get_connection()
 
     cur = conn.execute("""
         SELECT DISTINCT aggregate_id
         FROM event_store
+        ORDER BY aggregate_id
+    """)
+
+    cuentas = [row[0] for row in cur.fetchall()]
+
+    conn.close()
+
+    return cuentas
+
+# Complejo, deben ser cuentas idénticas, con mismos movimientos.
+def check_dup_accounts():
+    logger.info("check_dup_accounts")
+    conn = get_connection()
+
+    cur = conn.execute("""
+        SELECT *
+        FROM event_store
+        WHERE event_type = "MoneyTransfer"
         ORDER BY aggregate_id
     """)
 

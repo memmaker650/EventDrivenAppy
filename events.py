@@ -16,6 +16,26 @@ class MoneyWithDraw:
     def __init__(self, amount):
         self.amount = -amount
 
+class DemandMortgage:
+    def __init__(self, account_id, amount):
+        self.account_id = account_id
+        self.amount = -amount
+
+class MortgagePayment:
+    def __init__(self, account_id, amount):
+        self.account_id = account_id
+        self.amount = -amount
+
+class DemandCredit:
+    def __init__(self, account_id, amount):
+        self.account_id = account_id
+        self.amount = -amount
+
+class CreditPayment:
+    def __init__(self, account_id, amount):
+        self.account_id = account_id
+        self.amount = -amount
+
 class MoneyTransfer:
     def __init__(self, amount, destiny):
         self.amount = amount

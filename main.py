@@ -20,7 +20,6 @@ class EventSourcingApp(toga.App):
     gD = gestionDatos.gestionDatos()
 
     def account_changed(self, widget):  
-        print("Dentro de Account_Changed")
         logging.info("Dentro de Account_Changed")
 
         self.account_id = widget.value
@@ -43,7 +42,7 @@ class EventSourcingApp(toga.App):
             pass
 
         # Depositar, retirar y pago_tarjeta: solo cantidad
-        elif accion in ("depositar", "retirar"):
+        elif accion in ("depositar", "retirar", "pedir_hipoteca", "pago_hipoteca", "pedir_crédito", "pago_crédito"):
             self.amount_input.style.visibility = "visible"
         elif accion in ("pago_tarjeta"): 
             self.amount_input.style.visibility = "visible"   
@@ -133,7 +132,7 @@ class EventSourcingApp(toga.App):
             style=Pack(margin=10)
             )
         self.action_selector = toga.Selection(
-            items=["crear", "depositar", "retirar", "transferencia", "pago_tarjeta", "cerrar"],
+            items=["crear", "depositar", "retirar", "transferencia", "pago_tarjeta", "pedir_hipoteca", "pago_hipoteca", "pedir_crédito", "pago_crédito", "cerrar"],
             on_change=self.action_changed
         )
 
@@ -308,7 +307,7 @@ class EventSourcingApp(toga.App):
         ventana.show()
 
     def refresh_balance(self):
-        # acc = load_account(self.account_id)
+        acc = self.gD.domainAccount(self.account_id)
         self.label_info.text = (
             f"Titular: {acc.owner} | "
             f"Saldo: {acc.balance}"

@@ -31,6 +31,26 @@ class CardPayment:
         self.amount = amount
         self.shop = shop
 
+class DemandMortgage:
+    def __init__(self, account_id, amount):
+        self.account_id = account_id
+        self.amount = amount
+
+class MortgagePayment:
+    def __init__(self, account_id, amount):
+        self.account_id = account_id
+        self.amount = amount
+
+class DemandCredit:
+    def __init__(self, account_id, amount):
+        self.account_id = account_id
+        self.amount = amount
+
+class CreditPayment:
+    def __init__(self, account_id, amount):
+        self.account_id = account_id
+        self.amount = amount        
+
 class Overdraft:
     def __init__(self, account_id, amount, shop):
         self.account_id = account_id
