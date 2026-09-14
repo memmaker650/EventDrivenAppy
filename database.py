@@ -503,3 +503,38 @@ def check_overdraft():
             logger.info("Cuenta: "+cuenta[1]+"Saldo: " +money)
 
     return cuentas
+
+# Parte de Hypotekas 
+def create_hipotecasTable():
+    conn = get_connection()
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS hipotecas (
+        id TEXT PRIMARY KEY,
+        capital_inicial REAL NOT NULL,
+        tasa_anual REAL NOT NULL,
+        fecha_inicio TEXT NOT NULL,
+        fecha_fin TEXT NOT NULL,
+        cuota_mensual REAL NOT NULL,
+        meses_totales INTEGER NOT NULL,
+        meses_restantes INTEGER NOT NULL,
+        saldo_actual REAL NOT NULL
+    )""")
+
+    conn.commit()
+    conn.close()
+
+def create_amortizaciones_anticipadasTable():
+    conn = get_connection()
+
+    conn.execute("""CREATE TABLE IF NOT EXISTS amortizaciones_anticipadas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    hipoteca_id TEXT NOT NULL,
+    fecha TEXT NOT NULL,
+    importe REAL NOT NULL,
+    comision REAL NOT NULL,
+    FOREIGN KEY (hipoteca_id) REFERENCES hipotecas(id)
+    )""")
+
+    conn.commit()
+    conn.close()
