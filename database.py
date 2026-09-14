@@ -1,15 +1,27 @@
+import sys
 import sqlite3
 import json
 from datetime import datetime
 import logging
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 DB_NAME = "events.db"
 
 def get_connection():
-    return sqlite3.connect(DB_NAME)
+    if sys.platform == "win32":
+        db_file = Path(r"C:\Users\Jorge.Vega\Documents\ENABLON-proj\PROYECTOS\EbD\EventDrivenApplication\db")
+    elif sys.platform == "darwin":
+        db_file = Path.home() / "PycharmProjects" / "EventDrivenAppy" / "db"
+    else:
+        db_file = Path.home() / "EventDrivenApplication" / "db"
+    
+    db_file.mkdir(parents=True, exist_ok=True)   # crea la carpeta si no existe
 
+    db_file = db_file / DB_NAME                  # 👈 aquí concatenas carpeta + nombre
+
+    return sqlite3.connect(db_file)
 
 def init_db():
     logger.info("init_DB")
@@ -106,6 +118,7 @@ def crearCuenta(accid, owner):
     conn.close()
 
 def load_accountMoney(dinero, cuenta):
+    conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -396,6 +409,9 @@ def loadMaxAccountID():
 
     maximo = cur.fetchone()[0]
     conn.close()
+
+    if maximo == None:
+        maximo = 0
 
     return maximo   
 

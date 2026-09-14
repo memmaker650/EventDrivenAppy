@@ -32,9 +32,10 @@ class CardPayment:
         self.shop = shop
 
 class DemandMortgage:
-    def __init__(self, account_id, amount):
+    def __init__(self, account_id, amount, period):
         self.account_id = account_id
         self.amount = amount
+        self.returnPeriod = period
 
 class MortgagePayment:
     def __init__(self, account_id, amount):
@@ -42,9 +43,10 @@ class MortgagePayment:
         self.amount = amount
 
 class DemandCredit:
-    def __init__(self, account_id, amount):
+    def __init__(self, account_id, amount, period):
         self.account_id = account_id
         self.amount = amount
+        self.returnPeriod = period
 
 class CreditPayment:
     def __init__(self, account_id, amount):

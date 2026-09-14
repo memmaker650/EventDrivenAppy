@@ -111,6 +111,7 @@ def handle_demandMortgage(command):
         {
             "account_id": command.account_id,
             "amount": command.amount,
+            "return_Period": command.period
         }
     )
 
@@ -124,6 +125,7 @@ def handle_mortgagePayment(command):
         {
             "account_id": command.account_id,
             "amount": command.amount,
+            "payment_date": command.date
         }
     ) 
 
@@ -137,6 +139,7 @@ def handle_demandCredit(command):
         {
             "account_id": command.account_id,
             "amount": command.amount,
+            "return_Period": command.period
         }
     )  
 
@@ -150,6 +153,7 @@ def handle_CreditPayment(command):
         {
             "account_id": command.account_id,
             "amount": command.amount,
+            "payment_date": command.date
         }
     )    
 

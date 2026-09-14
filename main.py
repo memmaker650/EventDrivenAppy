@@ -1,3 +1,4 @@
+import sys
 import os
 import toga
 from toga.style import Pack
@@ -19,7 +20,7 @@ class EventSourcingApp(toga.App):
     estadoTexto = "Inicial"
     action_selector = toga.Selection()
     boton_execute = False
-    gD = gestionDatos.gestionDatos()
+    gD = gestionDatos.gestionDatos(app=self)
 
     def account_changed(self, widget):  
         logging.info("Dentro de Account_Changed")
@@ -61,11 +62,19 @@ class EventSourcingApp(toga.App):
             message="Tienes una nueva tarea pendiente",
             app_name="EventBasedApPy",
             timeout=10
-)    
-
+        )    
+        
+    @staticmethod
     def defineEstadoApp(self, estado, texto):       
         self.estadoApp = estado
         self.estadoTexto = texto
+
+    @staticmethod
+    def mensajeUsuario(self, mensaje, color):
+        self.label_info.text = mensaje
+        self.label_info.style.color = color
+
+        return True
 
     def startup(self):
         logging.info("Dentro startup")
@@ -338,7 +347,7 @@ class EventSourcingApp(toga.App):
         # Desplegable
         self.combo = toga.Selection(
                 items=["Opción 1", "Opción 2", "Opción 3"],
-                style=Pack(padding=5)
+                style=Pack(margin=5)
                 )
 
         # Primera tabla
@@ -348,13 +357,13 @@ class EventSourcingApp(toga.App):
             [1, "Juan"],
             [2, "María"],
             ],
-            style=Pack(flex=1, padding=5)
+            style=Pack(flex=1, margin=5)
             )
 
         # Label
         self.label = toga.Label(
             "Datos de entrada",
-            style=Pack(padding=(10, 5))
+            style=Pack(margin=(10, 5))
         )
 
         # Segunda tabla
@@ -364,12 +373,12 @@ class EventSourcingApp(toga.App):
         ["Producto", ""],
         ["Cantidad", ""],
         ],
-        style=Pack(flex=1, padding=5)
+        style=Pack(flex=1, margin=5)
         )
 
         # Contenedor principal
         caja = toga.Box(
-            style=Pack(direction=COLUMN, padding=10)
+            style=Pack(direction=COLUMN, margin=10)
             )
 
         caja.add(self.combo)
@@ -388,9 +397,19 @@ class EventSourcingApp(toga.App):
         )    
     
 def main():
-    log_file = Path(r"C:\Users\Jorge.Vega\Documents\ENABLON-proj\PROYECTOS\EbD\EventDrivenApplication\log\\")
+    if sys.platform == "win32":
+        log_file = Path(r"C:\Users\Jorge.Vega\Documents\ENABLON-proj\PROYECTOS\EbD\EventDrivenApplication\log\\")
+    elif sys.platform == "darwin":
+        log_file = Path.home() / "PycharmProjects" / "EventDrivenAppy" / "log"
+    else:
+        # Linux u otros
+        log_file = Path.home() / "EventDrivenApplication" / "log"
+
+    # 👇 Esto es lo que falta: crear la carpeta si no existe
+    log_file.mkdir(parents=True, exist_ok=True)
+
     logging.basicConfig(
-        filename=os.path.join(log_file, f"EbAPy_{fecha}.log"),
+        filename=log_file / f"EbAPy_{fecha}.log",
         level=logging.INFO,
         format="%(asctime)s - %(levelname)s - %(name)s -  %(message)s",
         force=True

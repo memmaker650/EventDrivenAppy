@@ -35,8 +35,8 @@ class gestionDatos():
             if ow_input is not None:
                 owner = ow_input.value
             else:
-                self.label_info.text = "Error Crear Cuenta, dueño no rellenado." 
-                return
+                mensajeUsuario("Error Crear Cuenta, dueño no rellenado.", "red")
+                return False
         print("Owner: ", owner)
         print("ACC-id: ", id_input)
 
@@ -48,12 +48,12 @@ class gestionDatos():
         # self.account_id = id_input.value   
         
         if self.boton_execution:
-            cmd = CreateAccount(
+            cmd = commands.CreateAccount(
                 id_input,
                 owner
             )
 
-            resul = handle_create_account(cmd)
+            resul = domain.handle_create_account(cmd)
 
             # self.account_selector.items = database.load_accounts()
         database.crearCuenta(id_input, owner)
@@ -114,7 +114,7 @@ class gestionDatos():
                 cantidad
             )
 
-            handle_deposit(cmd)
+            domain.handle_deposit(cmd)
         elif accion == "retirar":
             print("Jump-2_handle_withdraw")
             cmd = commands.MoneyWithDraw(
@@ -181,7 +181,7 @@ class gestionDatos():
             domain.handle_CardPayment(cmd)    
 
         elif accion == "cerrar":
-            cmd = CloseAccount(
+            cmd = commands.CloseAccount(
                 origen
             )
 
@@ -197,7 +197,7 @@ class gestionDatos():
         print("into de gestion Cuenta Al Dia.")
 
         if accion.value == "crear":
-            create_account()
+            self.create_account()
 
         elif accion.value == "depositar":
             print("Jump-2_handle_deposit")

@@ -17,24 +17,28 @@ class MoneyWithDraw:
         self.amount = -amount
 
 class DemandMortgage:
-    def __init__(self, account_id, amount):
+    def __init__(self, account_id, amount, period):
         self.account_id = account_id
         self.amount = -amount
+        self.payment_period = period
 
 class MortgagePayment:
-    def __init__(self, account_id, amount):
+    def __init__(self, account_id, amount, pdate):
         self.account_id = account_id
         self.amount = -amount
+        self.payment_date = pdate
 
 class DemandCredit:
-    def __init__(self, account_id, amount):
+    def __init__(self, account_id, amount, period):
         self.account_id = account_id
         self.amount = -amount
+        self.payment_period = period
 
 class CreditPayment:
-    def __init__(self, account_id, amount):
+    def __init__(self, account_id, amount, pdate):
         self.account_id = account_id
         self.amount = -amount
+        self.payment_date = pdate
 
 class MoneyTransfer:
     def __init__(self, amount, destiny):
@@ -51,8 +55,8 @@ class Overdraft:
         self.account_id = account_id
         self.amount = amount    
 
-class AccountClosed(self, account_id, owner):
-    def __init__(self):
+class AccountClosed:
+    def __init__(self, account_id, owner):
         self.account_id = account_id
         self.owner = owner
         self.state = "closed"
