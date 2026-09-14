@@ -538,3 +538,119 @@ def create_amortizaciones_anticipadasTable():
 
     conn.commit()
     conn.close()
+
+def generar_id_hypoteka():
+
+    conn = get_connection()
+
+    conn.execute("""
+        SELECT id
+        FROM hipotecas
+        ORDER BY id DESC
+        LIMIT 1
+        """)
+
+    ultimo = conn.fetchone()
+
+    if not ultimo:
+        return "ACC-001"
+
+    numero = int(ultimo[0].split("-")[1]) + 1
+
+    return f"ACC-{numero:03d}"
+
+def cargar_nuevaHypoteka(hipoteca_id, capital, tasa_anual, fecha_inicio, fecha_fin, cuota):
+    conn = get_connection()
+
+    conn.execute("""
+        INSERT INTO hipotecas
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (
+            hipoteca_id,
+            capital,
+            tasa_anual,
+            fecha_inicio,
+            fecha_fin,
+            cuota
+        ))
+
+    conn.commit()
+
+def buscar_hypoteka(hipoteca_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+            SELECT saldo_actual,
+                cuota_mensual,
+                tasa_anual
+            FROM hipotecas
+            WHERE id = ?
+        """, (hipoteca_id,))
+
+    fila = cursor.fetchone()
+
+    return fila
+
+def guardar_amortizacion(hipoteca_id, fecha, importe):
+    comision = round(importe * 0.005, 2)
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO amortizaciones_anticipadas
+        (
+            hipoteca_id,
+            fecha,
+            importe,
+            comision
+        )
+        VALUES (?, ?, ?, ?)
+        """,
+        (
+            hipoteca_id,
+            fecha,
+            importe,
+            comision
+        ))
+
+    conn.commit()
+
+    return comision
+
+def actualizar_hypotekaAmortizacion(resultado, hipoteca_id, importe_amortizado):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+            UPDATE hipotecas
+            SET saldo_actual = ?,
+                meses_restantes = ?
+            WHERE id = ?
+        """,
+        (
+            resultado["nuevo_saldo"],
+            resultado["meses_restantes"],
+            hipoteca_id
+        ))
+
+    cursor.execute("""
+            INSERT INTO amortizaciones_anticipadas(
+                hipoteca_id,
+                fecha,
+                importe,
+                comision
+            )
+            VALUES(
+                ?, date('now'), ?, ?
+            )
+        """,
+        (
+            hipoteca_id,
+            importe_amortizado,
+            resultado["comision"]
+        ))
+
+    conn.commit()

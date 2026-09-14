@@ -1,36 +1,16 @@
 import sqlite3
 from datetime import datetime
 import database
-
+import math
 
 class HipotecaManager:
     def __init__(self):
-        self.conn = sqlite3.connect(DB_NAME)
         self.crear_tablas()
 
     def crear_tablas(self):
         database.create_hipotecasTable()
         database.create_amortizaciones_anticipadasTable()
 
-    def generar_id(self):
-
-        cursor = self.conn.cursor()
-
-        cursor.execute("""
-        SELECT id
-        FROM hipotecas
-        ORDER BY id DESC
-        LIMIT 1
-        """)
-
-        ultimo = cursor.fetchone()
-
-        if not ultimo:
-            return "ACC-001"
-
-        numero = int(ultimo[0].split("-")[1]) + 1
-
-        return f"ACC-{numero:03d}"
 
     def meses_entre_fechas(self, inicio, fin):
 
@@ -69,24 +49,9 @@ class HipotecaManager:
             meses
         )
 
-        hipoteca_id = self.generar_id()
+        hipoteca_id = database.generar_id()
 
-        cursor = self.conn.cursor()
-
-        cursor.execute("""
-        INSERT INTO hipotecas
-        VALUES (?, ?, ?, ?, ?, ?)
-        """,
-        (
-            hipoteca_id,
-            capital,
-            tasa_anual,
-            fecha_inicio,
-            fecha_fin,
-            cuota
-        ))
-
-        self.conn.commit()
+        database.cargar_nuevaHypoteka(capital, tasa_anual, fecha_inicio, fecha_fin, cuota)
 
         return hipoteca_id, cuota
 
@@ -142,34 +107,6 @@ class HipotecaManager:
             )
         }
 
-    def guardar_amortizacion(self, hipoteca_id, fecha, importe):
-        comision = round(importe * 0.005, 2)
-
-        cursor = self.conn.cursor()
-
-        cursor.execute("""
-        INSERT INTO amortizaciones_anticipadas
-        (
-            hipoteca_id,
-            fecha,
-            importe,
-            comision
-        )
-        VALUES (?, ?, ?, ?)
-        """,
-        (
-            hipoteca_id,
-            fecha,
-            importe,
-            comision
-        ))
-
-        self.conn.commit()
-
-        return comision
-
-    import math
-
     def reducir_plazo_manteniendo_cuota(self, saldo_actual, importe_amortizado, cuota_actual, tasa_anual):
         # Comisión 0,5%
         comision = round(
@@ -206,17 +143,7 @@ class HipotecaManager:
         }
 
     def aplicar_amortizacion_reduciendo_plazo(self, hipoteca_id, importe_amortizado):
-        cursor = self.conn.cursor()
-
-        cursor.execute("""
-            SELECT saldo_actual,
-                cuota_mensual,
-                tasa_anual
-            FROM hipotecas
-            WHERE id = ?
-        """, (hipoteca_id,))
-
-        fila = cursor.fetchone()
+        fila = database.buscar_hypoteka(hipoteca_id)
 
         if not fila:
             raise ValueError("Hipoteca no encontrada")
@@ -230,35 +157,6 @@ class HipotecaManager:
             tasa_anual=tasa
         )
 
-        cursor.execute("""
-            UPDATE hipotecas
-            SET saldo_actual = ?,
-                meses_restantes = ?
-            WHERE id = ?
-        """,
-        (
-            resultado["nuevo_saldo"],
-            resultado["meses_restantes"],
-            hipoteca_id
-        ))
-
-        cursor.execute("""
-            INSERT INTO amortizaciones_anticipadas(
-                hipoteca_id,
-                fecha,
-                importe,
-                comision
-            )
-            VALUES(
-                ?, date('now'), ?, ?
-            )
-        """,
-        (
-            hipoteca_id,
-            importe_amortizado,
-            resultado["comision"]
-        ))
-
-        self.conn.commit()
+        database.actualizar_hypotekaAmortizacion(resultado, hipoteca_id, importe_amortizado)
 
         return resultado
