@@ -3,6 +3,7 @@ import os
 import toga
 from toga.style import Pack
 from toga.style.pack import COLUMN, ROW
+from toga.colors import RED, BLUE, GREEN, ORANGE, YELLOW
 import logging
 from pathlib import Path
 from datetime import datetime
@@ -16,11 +17,17 @@ import gestionDatos
 print("Arrancando aplicación...")
 
 class EventSourcingApp(toga.App):
-    estadoApp = "info"
-    estadoTexto = "Inicial"
+    estadoApp = str
+    estadoTexto = str
     action_selector = toga.Selection()
     boton_execute = False
-    gD = gestionDatos.gestionDatos(app=self)
+    
+    # Contructor de la clase de la GUI
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.estadoApp = "info"
+        self.estadoTexto = "Inicial"
+        self.gD = gestionDatos.gestionDatos(app=self)
 
     def account_changed(self, widget):  
         logging.info("Dentro de Account_Changed")
@@ -43,14 +50,21 @@ class EventSourcingApp(toga.App):
         # Crear y cerrar: nada
         if accion in ("crear", "cerrar"):
             pass
-
         # Depositar, retirar y pago_tarjeta: solo cantidad
-        elif accion in ("depositar", "retirar", "pedir_hipoteca", "pago_hipoteca", "pedir_crédito", "pago_crédito"):
+        elif accion in ("depositar", "retirar", "pago_hipoteca", "pago_crédito"):
             self.amount_input.style.visibility = "visible"
+            self.interest_rate.visibility = "hidden"
+            self.yearsReturn.visibility = "hidden"
+            self.shop_input.style.visibility = "hidden"
+        # Hipoteca y Crédito: creación
+        elif accion in ("pedir_hipoteca", "pedir_crédito"):
+            self.amount_input.style.visibility = "visible"   
+            self.interest_rate.visibility = "visible"
+            self.yearsReturn.visibility = "visible"
+            self.shop_input.style.visibility = "hidden"
         elif accion in ("pago_tarjeta"): 
             self.amount_input.style.visibility = "visible"   
             self.shop_input.style.visibility = "visible"
-
         # Transferencia: cantidad + cuenta destino
         elif accion == "transferencia":
             self.amount_input.style.visibility = "visible"
@@ -64,10 +78,22 @@ class EventSourcingApp(toga.App):
             timeout=10
         )    
         
-    @staticmethod
-    def defineEstadoApp(self, estado, texto):       
+    def actualizar_estado(self, texto, estado):
         self.estadoApp = estado
         self.estadoTexto = texto
+
+        if self.estadoApp == "info" or self.estadoApp == "Info":
+            self.label_info.text = self.estadoTexto
+            self.label_info.style.color = BLUE
+        elif self.estadoApp == "Error" or self.estadoApp == "error":
+            self.label_info.text = self.estadoTexto
+            self.label_info.style.color = RED
+        elif self.estadoApp == "cuidado" or self.estadoApp == "warning":
+            self.label_info.text = self.estadoTexto
+            self.label_info.style.color = YELLOW
+        elif self.estadoApp == "ok" or self.estadoApp == "OK" or self.estadoApp == "Ok":
+            self.label_info.text = self.estadoTexto
+            self.label_info.style.color = GREEN
 
     @staticmethod
     def mensajeUsuario(self, mensaje, color):
@@ -99,27 +125,6 @@ class EventSourcingApp(toga.App):
         )
 
         self.label_info = toga.Label("Inicial")
-
-        if self.estadoApp == "info":
-            self.label_info = toga.Label(
-                self.estadoTexto,
-                style=Pack(margin=10)
-            )
-        elif self.estadoApp == "error":
-            self.label_info = toga.Label(
-                self.estadoTexto,
-                style=Pack(margin=10, color="red")
-            )
-        elif self.estadoApp == "cuidado":
-            self.label_info = toga.Label(
-                self.estadoTexto,
-                style=Pack(margin=10, color="yellow")
-            )
-        elif self.estadoApp == "ok":
-            self.label_info = toga.Label(
-                self.estadoTexto,
-                style=Pack(margin=10, color="green")
-            )
 
         create_btn = toga.Button(
             "Crear cuenta",
@@ -180,6 +185,18 @@ class EventSourcingApp(toga.App):
             style=Pack(width=200)
         )
 
+        # Tasa Interés
+        self.interest_rate = toga.TextInput(
+            placeholder="Tasa Interés",
+            style=Pack(width=200)
+        )
+
+        # Tiempo Hypoteca/Crédito
+        self.yearsReturn = toga.TextInput(
+            placeholder="Periodo Retorno",
+            style=Pack(width=200)
+        )
+
         # Selector de cuenta destino (para transferencia)
         self.label_destino = toga.Label(
             "Cuenta destino :",
@@ -194,12 +211,14 @@ class EventSourcingApp(toga.App):
         # Botón Ejecutar Acción
         self.execute_btn = toga.Button(
             "Ejecutar",
-            on_press=lambda widget: self.gD.ejecutarAccion(widget, self.action_selector.value, self.account_selector.value, self.amount_input.value, self.transfer_account_selector.value, None, self.shop_input.value)
+            on_press=lambda widget: self.gD.ejecutarAccion(widget, self.action_selector.value, self.account_selector.value, self.amount_input.value, self.transfer_account_selector.value, None, self.shop_input.value, self.interest_rate.value, self.yearsReturn.value)
         )
 
         # Ocultos inicialmente
         self.amount_input.style.visibility = "hidden"
         self.shop_input.style.visibility = "hidden"
+        self.interest_rate.visibility = "hidden"
+        self.yearsReturn.visibility = "hidden"
         self.label_destino.style.visibility = "hidden"
         self.transfer_account_selector.style.visibility = "hidden"
 
@@ -226,7 +245,9 @@ class EventSourcingApp(toga.App):
                 self.account_selector,
                 self.accion_label, 
                 self.action_selector,
+                self.interest_rate,
                 self.amount_input,
+                self.yearsReturn, 
                 self.shop_input,
                 self.label_destino,
                 self.transfer_account_selector,

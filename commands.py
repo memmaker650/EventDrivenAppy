@@ -32,26 +32,38 @@ class CardPayment:
         self.shop = shop
 
 class DemandMortgage:
-    def __init__(self, account_id, amount, period):
+    def __init__(self, account_id, amount, rate, period, dateInit):
         self.account_id = account_id
+        self.rate = rate
         self.amount = amount
-        self.returnPeriod = period
+        self.period = period
+        self.dateInit = dateInit
 
 class MortgagePayment:
-    def __init__(self, account_id, amount):
+    def __init__(self, account_id, amount, datePay):
         self.account_id = account_id
         self.amount = amount
+        self.paymentDate = datePay
+
+class MortgageAmortisation:
+    def __init__(self, account_id, amount, datePay):
+        self.account_id = account_id
+        self.amount = amount
+        self.paymentDate = datePay        
 
 class DemandCredit:
-    def __init__(self, account_id, amount, period):
+    def __init__(self, account_id, amount, rate, period, dateInit):
         self.account_id = account_id
         self.amount = amount
         self.returnPeriod = period
+        self.returnPeriod = period
+        self.dateInit = dateInit
 
 class CreditPayment:
-    def __init__(self, account_id, amount):
+    def __init__(self, account_id, amount, datePay):
         self.account_id = account_id
-        self.amount = amount        
+        self.amount = amount
+        self.paymentDate = datePay        
 
 class Overdraft:
     def __init__(self, account_id, amount, shop):

@@ -1,15 +1,22 @@
 import os
 import logging
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 import database
 import commands 
 import domain
+import hypotekas
 
 logger = logging.getLogger(__name__)
 
 class gestionDatos():
     # Variables para communicación con la UI
     boton_execution = bool
+
+    def __init__(self, app):
+        self.app = app
+        self.manager = hypotekas.HipotecaManager()
 
     def initBusiness(self):
         database.init_db()
@@ -86,7 +93,7 @@ class gestionDatos():
         # self.refresh_balance()
         # self.gestion_mensaje_info(resul)    
 
-    def ejecutarAccion(self, widget, accion, origen, cantidad, destino, propietario, tienda):
+    def ejecutarAccion(self, widget, accion, origen, cantidad, destino, propietario, tienda, rate, dateFin):
         logging.info("into de ejecutarAccion.")
         print("into de ejecutarAccion.")
         # print("into de ejecutarAccion.")
@@ -128,10 +135,18 @@ class gestionDatos():
             print("Jump-2_handle_DemandMortgage")
             cmd = commands.DemandMortgage(
                 origen,
-                cantidad
+                rate,
+                cantidad,
+                dateFin,
+                datetime.now().isoformat()
             )
 
-            domain.handle_demandMortgage(cmd) 
+            fecha_futura = datetime.now() + relativedelta(years=int(dateFin))
+            if origen == None: 
+                self.app.actualizar_estado("No hay cuenta asociada", "Error")
+            else:
+                domain.handle_demandMortgage(cmd)
+                self.manager.crear_hipoteca(origen, cantidad, rate, datetime.now(), fecha_futura) 
         
         elif accion == "pago_hipoteca":
             print("Jump-2_handle_MortgagePayment")

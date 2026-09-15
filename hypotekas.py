@@ -3,8 +3,13 @@ from datetime import datetime
 import database
 import math
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 class HipotecaManager:
     def __init__(self):
+        database.init_db()
         self.crear_tablas()
 
     def crear_tablas(self):
@@ -12,10 +17,11 @@ class HipotecaManager:
         database.create_amortizaciones_anticipadasTable()
 
 
-    def meses_entre_fechas(self, inicio, fin):
+    def meses_entre_fechas(self, fecha_inicio, fecha_fin):
+        logger.info("Método cálculo entre fechas.")
 
-        fecha_inicio = datetime.strptime(inicio, "%Y-%m-%d")
-        fecha_fin = datetime.strptime(fin, "%Y-%m-%d")
+        #fecha_inicio = datetime.strptime(inicio, "%Y-%m-%d")
+        #fecha_fin = datetime.strptime(fin, "%Y-%m-%d")
 
         return (
             (fecha_fin.year - fecha_inicio.year) * 12
@@ -24,20 +30,22 @@ class HipotecaManager:
         )
 
     def calcular_cuota(self, capital, tasa_anual, meses):
+        logger.info("Método cálculo CUOTAS.")
+
+        tasa_anual = float(tasa_anual.replace(',', '.')) # Convierto la coma en . si viene así
+        tasa_anual = float(tasa_anual)
+        capital = float(capital)
+        meses = float(meses)
 
         tasa_mensual = tasa_anual / 100 / 12
 
-        cuota = (
-            capital
-            * tasa_mensual
-            * (1 + tasa_mensual) ** meses
-        ) / (
-            (1 + tasa_mensual) ** meses - 1
-        )
+        cuota = (capital * tasa_mensual * (1 + tasa_mensual) ** meses) / ((1 + tasa_mensual) ** meses - 1)
 
         return round(cuota, 2)
 
-    def crear_hipoteca(self, capital, tasa_anual, fecha_inicio, fecha_fin):
+    def crear_hipoteca(self, origen, capital, tasa_anual, fecha_inicio, fecha_fin):
+        logger.info("Crear Hypoteka")
+
         meses = self.meses_entre_fechas(
             fecha_inicio,
             fecha_fin
@@ -49,13 +57,16 @@ class HipotecaManager:
             meses
         )
 
-        hipoteca_id = database.generar_id()
+        print("Cuota: ", cuota)
+        # Asignar hipoteca a la cuenta asociada.
+        hipoteca_id = database.generar_id_hypoteka()
 
-        database.cargar_nuevaHypoteka(capital, tasa_anual, fecha_inicio, fecha_fin, cuota)
+        database.cargar_nuevaHypoteka(origen, hipoteca_id, capital, tasa_anual, fecha_inicio, fecha_fin, cuota, meses)
 
         return hipoteca_id, cuota
 
     def generar_cuadro_amortizacion(self, capital, tasa_anual, cuota, meses):
+        logger.info("Método generar cuadro Amortización")
 
         tasa_mensual = tasa_anual / 100 / 12
 
@@ -85,6 +96,8 @@ class HipotecaManager:
         return cuadro
 
     def amortizacion_anticipada(self, saldo_actual, importe_amortizado):
+        logger.info("Método amortización Anticipada.")
+
         comision = importe_amortizado * 0.005
 
         nuevo_saldo = saldo_actual - importe_amortizado
@@ -108,6 +121,8 @@ class HipotecaManager:
         }
 
     def reducir_plazo_manteniendo_cuota(self, saldo_actual, importe_amortizado, cuota_actual, tasa_anual):
+        logger.info("Método reducir plazo manteniendo cuota")
+
         # Comisión 0,5%
         comision = round(
             importe_amortizado * 0.005,
@@ -143,6 +158,8 @@ class HipotecaManager:
         }
 
     def aplicar_amortizacion_reduciendo_plazo(self, hipoteca_id, importe_amortizado):
+        logger.info("Método aplicar amortizacion reduciendo plazo")
+
         fila = database.buscar_hypoteka(hipoteca_id)
 
         if not fila:

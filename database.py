@@ -91,7 +91,7 @@ def load_accountInfo(cuenta):
 def crearCuenta(accid, owner):
     conn = get_connection()
 
-    fechaActual = datetime.now()
+    fechaActual = datetime.now().isoformat()
     print("accidDB:", accid)
 
     conn.execute(
@@ -260,7 +260,7 @@ def save_event(aggregate_id, event_type, event_data):
                 aggregate_id,
                 event_type,
                 json.dumps(event_data),
-                datetime.now(),
+                datetime.now().isoformat(),
             ),
         )
 
@@ -505,12 +505,17 @@ def check_overdraft():
     return cuentas
 
 # Parte de Hypotekas 
+#----------------------------
 def create_hipotecasTable():
+    logger.info("Creando Tabla Hipotecas")
+
     conn = get_connection()
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS hipotecas (
-        id TEXT PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        cuenta_asociada TEXT NOT NULL,
+        hipoteca_id TEXT NOT NULL,
         capital_inicial REAL NOT NULL,
         tasa_anual REAL NOT NULL,
         fecha_inicio TEXT NOT NULL,
@@ -518,13 +523,16 @@ def create_hipotecasTable():
         cuota_mensual REAL NOT NULL,
         meses_totales INTEGER NOT NULL,
         meses_restantes INTEGER NOT NULL,
-        saldo_actual REAL NOT NULL
+        saldo_actual REAL NOT NULL,
+        FOREIGN KEY (cuenta_asociada) REFERENCES accounts(account_id)
     )""")
 
     conn.commit()
     conn.close()
 
 def create_amortizaciones_anticipadasTable():
+    logger.info("Creando Tabla amortizaciones Anticipadas")
+
     conn = get_connection()
 
     conn.execute("""CREATE TABLE IF NOT EXISTS amortizaciones_anticipadas (
@@ -540,44 +548,60 @@ def create_amortizaciones_anticipadasTable():
     conn.close()
 
 def generar_id_hypoteka():
+    logger.info("SELECT Hipoteca")
 
     conn = get_connection()
 
-    conn.execute("""
-        SELECT id
+    cur = conn.execute("""
+        SELECT hipoteca_id
         FROM hipotecas
         ORDER BY id DESC
         LIMIT 1
         """)
 
-    ultimo = conn.fetchone()
+    ultimo = cur.fetchone()
+    print("Hypoteka_id: ", ultimo)
 
     if not ultimo:
-        return "ACC-001"
+        return "HYP-001"
 
     numero = int(ultimo[0].split("-")[1]) + 1
 
-    return f"ACC-{numero:03d}"
+    return f"HYP-{numero:03d}"
 
-def cargar_nuevaHypoteka(hipoteca_id, capital, tasa_anual, fecha_inicio, fecha_fin, cuota):
+def cargar_nuevaHypoteka(origen, hipoteca_id, capital, tasa_anual, fecha_inicio, fecha_fin, cuota, meses):
+    logger.info("Insertar Nueva Hipoteca")
+
+    fecha_inicio = fecha_inicio.date().isoformat()
+    fecha_fin = fecha_fin.date().isoformat()
+    # Cálculo meses restantes
+    meses_restante = meses
+    saldo_actual = capital
+
     conn = get_connection()
 
     conn.execute("""
-        INSERT INTO hipotecas
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO hipotecas(cuenta_asociada, hipoteca_id, capital_inicial, tasa_anual, fecha_inicio, fecha_fin, cuota_mensual, meses_totales, meses_restantes, saldo_actual)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
+            origen,
             hipoteca_id,
             capital,
             tasa_anual,
             fecha_inicio,
             fecha_fin,
-            cuota
+            cuota, 
+            meses_restante,
+            meses_restante,
+            saldo_actual
         ))
 
     conn.commit()
 
 def buscar_hypoteka(hipoteca_id):
+    logger.info("SELECT Hipoteca por ID")
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -594,6 +618,8 @@ def buscar_hypoteka(hipoteca_id):
     return fila
 
 def guardar_amortizacion(hipoteca_id, fecha, importe):
+    logger.info("INSERT Amortización Anticipada")
+
     comision = round(importe * 0.005, 2)
 
     conn = get_connection()
@@ -621,6 +647,8 @@ def guardar_amortizacion(hipoteca_id, fecha, importe):
     return comision
 
 def actualizar_hypotekaAmortizacion(resultado, hipoteca_id, importe_amortizado):
+    logger.info("UPDATE actualizar hypoteka Amortizacion")
+
     conn = get_connection()
     cursor = conn.cursor()
 

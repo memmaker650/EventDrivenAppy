@@ -104,14 +104,18 @@ def handle_CardPayment(command):
 def handle_demandMortgage(command):
     print("Demand Mortgage")
     logger.info("handle_Demand_Mortgage")
+    
+    print("Period: ", command.period)
 
     save_event(
         command.account_id,
         "demandMortgage",
         {
             "account_id": command.account_id,
+            "interest_Rate": command.rate,
             "amount": command.amount,
-            "return_Period": command.period
+            "return_Period": command.period,
+            "initialDate": command.dateInit
         }
     )
 
@@ -127,7 +131,21 @@ def handle_mortgagePayment(command):
             "amount": command.amount,
             "payment_date": command.date
         }
-    ) 
+    )
+
+def handle_mortgageAmortisation(command):
+    print("Mortgage Payment")
+    logger.info("handle_Mortgage_Payment")
+
+    save_event(
+        command.account_id,
+        "mortgageAmortisation",
+        {
+            "account_id": command.account_id,
+            "amount": command.amount,
+            "payment_date": command.date
+        }
+    )  
 
 def handle_demandCredit(command):
     print("demand Credit")
@@ -138,6 +156,7 @@ def handle_demandCredit(command):
         "demandCredit",
         {
             "account_id": command.account_id,
+            "interest_Rate": command.rate,
             "amount": command.amount,
             "return_Period": command.period
         }

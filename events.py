@@ -17,10 +17,12 @@ class MoneyWithDraw:
         self.amount = -amount
 
 class DemandMortgage:
-    def __init__(self, account_id, amount, period):
+    def __init__(self, account_id, rate, amount, period, dateInit):
         self.account_id = account_id
+        self.interest_rate = rate
         self.amount = -amount
-        self.payment_period = period
+        self.period = period
+        self.initialDate = dateInit
 
 class MortgagePayment:
     def __init__(self, account_id, amount, pdate):
@@ -28,11 +30,19 @@ class MortgagePayment:
         self.amount = -amount
         self.payment_date = pdate
 
-class DemandCredit:
-    def __init__(self, account_id, amount, period):
+class AmortisationPayment:
+    def __init__(self, account_id, amount, pdate):
         self.account_id = account_id
         self.amount = -amount
+        self.payment_date = pdate
+
+class DemandCredit:
+    def __init__(self, account_id, rate, amount, period, dateInit):
+        self.account_id = account_id
+        self.interest_rate = rate
+        self.amount = -amount
         self.payment_period = period
+        self.initialDate = dateInit
 
 class CreditPayment:
     def __init__(self, account_id, amount, pdate):
