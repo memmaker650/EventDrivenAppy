@@ -32,7 +32,7 @@ class CardPayment:
         self.shop = shop
 
 class DemandMortgage:
-    def __init__(self, account_id, amount, rate, period, dateInit):
+    def __init__(self, account_id, rate, amount, period, dateInit):
         self.account_id = account_id
         self.rate = rate
         self.amount = amount

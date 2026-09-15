@@ -515,6 +515,7 @@ def create_hipotecasTable():
         CREATE TABLE IF NOT EXISTS hipotecas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         cuenta_asociada TEXT NOT NULL,
+        es_Credito BOOLEAN NOT NULL default 0,
         hipoteca_id TEXT NOT NULL,
         capital_inicial REAL NOT NULL,
         tasa_anual REAL NOT NULL,
