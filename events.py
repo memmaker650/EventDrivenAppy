@@ -41,7 +41,7 @@ class DemandCredit:
         self.account_id = account_id
         self.interest_rate = rate
         self.amount = -amount
-        self.payment_period = period
+        self.period = period
         self.initialDate = dateInit
 
 class CreditPayment:

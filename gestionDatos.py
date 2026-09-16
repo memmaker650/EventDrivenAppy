@@ -133,8 +133,12 @@ class gestionDatos():
 
         elif accion == "pedir_hipoteca":
             print("Jump-2_handle_DemandMortgage")
+
+            hyp_id = database.generar_id_hypoteka()
+
             cmd = commands.DemandMortgage(
                 origen,
+                hyp_id,
                 rate,
                 cantidad,
                 dateFin,
@@ -150,8 +154,11 @@ class gestionDatos():
         
         elif accion == "pago_hipoteca":
             print("Jump-2_handle_MortgagePayment")
+
+            hyp_id = buscar_hypoteka_asociadaCuenta(origen)
+
             cmd = commands.MortgagePayment(
-                origen,
+                hyp_id,
                 cantidad
             )
 
@@ -159,17 +166,32 @@ class gestionDatos():
 
         elif accion == "pedir_crédito":
             print("Jump-2_handle_DemandCredit")
+
+            credit_id = database.generar_id_credito()
+
             cmd = commands.DemandCredit(
                 origen,
-                cantidad
+                credit_id,
+                rate,
+                cantidad,
+                dateFin,
+                datetime.now().isoformat()
             )
-
-            domain.handle_demandCredit(cmd)
-        
+            
+            fecha_futura = datetime.now() + relativedelta(years=int(dateFin))
+            if origen == None: 
+                self.app.actualizar_estado("No hay cuenta asociada", "Error")
+            else:
+                domain.handle_demandCredit(cmd)
+                self.manager.crear_hipoteca(origen, cantidad, rate, datetime.now(), fecha_futura, 1)  # 1 porque es un crédito. 
+            
         elif accion == "pago_crédito":
             print("Jump-2_handle_CreditPayment")
+
+            credit_id = database.buscar_credito_asociadaCuenta(origen)
+
             cmd = commands.CreditPayment(
-                origen,
+                credit_id,
                 cantidad
             )
 
@@ -269,10 +291,15 @@ class gestionDatos():
                 else:
                     self.label_info = "Error guardado Montante - KO !!"
 
-        
         print("TERMINADO TRATAMIENTO EN BLOQUE !!")
         logging.info("TERMINADO TRATAMIENTO EN BLOQUE !!")
         self.label_info = ("TERMINADO TRATAMIENTO EN BLOQUE !!")
+
+    def listar_hypotecasCreditos_asociados(self, origen, tipo):
+        if tipo == "hip":
+            return database.listar_hypotecasCreditos_asociados(origen, 0)
+        else: 
+            return database.listar_hypotecasCreditos_asociados(origen, 1)
 
     def gestion_mensaje_info (self, resultado):
         logging.info("gestion_mensaje_info")

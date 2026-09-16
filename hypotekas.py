@@ -43,7 +43,7 @@ class HipotecaManager:
 
         return round(cuota, 2)
 
-    def crear_hipoteca(self, origen, capital, tasa_anual, fecha_inicio, fecha_fin):
+    def crear_hipoteca(self, origen, capital, tasa_anual, fecha_inicio, fecha_fin, credito=0):
         logger.info("Crear Hypoteka")
 
         meses = self.meses_entre_fechas(
@@ -58,10 +58,16 @@ class HipotecaManager:
         )
 
         print("Cuota: ", cuota)
-        # Asignar hipoteca a la cuenta asociada.
-        hipoteca_id = database.generar_id_hypoteka()
+        
 
-        database.cargar_nuevaHypoteka(origen, hipoteca_id, capital, tasa_anual, fecha_inicio, fecha_fin, cuota, meses)
+        if credito != 0:
+            # Asignar hipoteca a la cuenta asociada.
+            hipoteca_id = database.generar_id_credito()
+            database.cargar_nuevaHypoteka(origen, hipoteca_id, capital, tasa_anual, fecha_inicio, fecha_fin, cuota, meses, 1)
+        else:
+            # Asignar hipoteca a la cuenta asociada.
+            hipoteca_id = database.generar_id_hypoteka()
+            database.cargar_nuevaHypoteka(origen, hipoteca_id, capital, tasa_anual, fecha_inicio, fecha_fin, cuota, meses)
 
         return hipoteca_id, cuota
 

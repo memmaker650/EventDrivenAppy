@@ -32,8 +32,9 @@ class CardPayment:
         self.shop = shop
 
 class DemandMortgage:
-    def __init__(self, account_id, rate, amount, period, dateInit):
+    def __init__(self, account_id, hypoteka_id, rate, amount, period, dateInit):
         self.account_id = account_id
+        self.mortgage_id = hypoteka_id
         self.rate = rate
         self.amount = amount
         self.period = period
@@ -52,11 +53,12 @@ class MortgageAmortisation:
         self.paymentDate = datePay        
 
 class DemandCredit:
-    def __init__(self, account_id, amount, rate, period, dateInit):
+    def __init__(self, account_id, credit_id, rate, amount, period, dateInit):
         self.account_id = account_id
+        self.credit_id = credit_id
+        self.rate = rate
         self.amount = amount
-        self.returnPeriod = period
-        self.returnPeriod = period
+        self.period = period
         self.dateInit = dateInit
 
 class CreditPayment:

@@ -515,7 +515,6 @@ def create_hipotecasTable():
         CREATE TABLE IF NOT EXISTS hipotecas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         cuenta_asociada TEXT NOT NULL,
-        es_Credito BOOLEAN NOT NULL default 0,
         hipoteca_id TEXT NOT NULL,
         capital_inicial REAL NOT NULL,
         tasa_anual REAL NOT NULL,
@@ -525,6 +524,7 @@ def create_hipotecasTable():
         meses_totales INTEGER NOT NULL,
         meses_restantes INTEGER NOT NULL,
         saldo_actual REAL NOT NULL,
+        es_Credito BOOLEAN NOT NULL default 0,
         FOREIGN KEY (cuenta_asociada) REFERENCES accounts(account_id)
     )""")
 
@@ -549,7 +549,7 @@ def create_amortizaciones_anticipadasTable():
     conn.close()
 
 def generar_id_hypoteka():
-    logger.info("SELECT Hipoteca")
+    logger.info("Generar ID Hipoteca")
 
     conn = get_connection()
 
@@ -570,7 +570,30 @@ def generar_id_hypoteka():
 
     return f"HYP-{numero:03d}"
 
-def cargar_nuevaHypoteka(origen, hipoteca_id, capital, tasa_anual, fecha_inicio, fecha_fin, cuota, meses):
+def generar_id_credito():
+    logger.info("Generar id Crédito")
+
+    conn = get_connection()
+
+    cur = conn.execute("""
+        SELECT hipoteca_id
+        FROM hipotecas
+        WHERE es_Credito = 1
+        ORDER BY id DESC
+        LIMIT 1
+        """)
+
+    ultimo = cur.fetchone()
+    print("Crédito_id: ", ultimo)
+
+    if not ultimo:
+        return "CRE-001"
+
+    numero = int(ultimo[0].split("-")[1]) + 1
+
+    return f"CRE-{numero:03d}"
+
+def cargar_nuevaHypoteka(origen, hipoteca_id, capital, tasa_anual, fecha_inicio, fecha_fin, cuota, meses, credito=0):
     logger.info("Insertar Nueva Hipoteca")
 
     fecha_inicio = fecha_inicio.date().isoformat()
@@ -581,22 +604,41 @@ def cargar_nuevaHypoteka(origen, hipoteca_id, capital, tasa_anual, fecha_inicio,
 
     conn = get_connection()
 
-    conn.execute("""
-        INSERT INTO hipotecas(cuenta_asociada, hipoteca_id, capital_inicial, tasa_anual, fecha_inicio, fecha_fin, cuota_mensual, meses_totales, meses_restantes, saldo_actual)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            origen,
-            hipoteca_id,
-            capital,
-            tasa_anual,
-            fecha_inicio,
-            fecha_fin,
-            cuota, 
-            meses_restante,
-            meses_restante,
-            saldo_actual
-        ))
+    if credito !=0:
+            conn.execute("""
+            INSERT INTO hipotecas(cuenta_asociada, hipoteca_id, capital_inicial, tasa_anual, fecha_inicio, fecha_fin, cuota_mensual, meses_totales, meses_restantes, saldo_actual, es_Credito)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                origen,
+                hipoteca_id,
+                capital,
+                tasa_anual,
+                fecha_inicio,
+                fecha_fin,
+                cuota, 
+                meses_restante,
+                meses_restante,
+                saldo_actual,
+                1
+            ))
+    else:   
+        conn.execute("""
+            INSERT INTO hipotecas(cuenta_asociada, hipoteca_id, capital_inicial, tasa_anual, fecha_inicio, fecha_fin, cuota_mensual, meses_totales, meses_restantes, saldo_actual)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                origen,
+                hipoteca_id,
+                capital,
+                tasa_anual,
+                fecha_inicio,
+                fecha_fin,
+                cuota, 
+                meses_restante,
+                meses_restante,
+                saldo_actual
+            ))
 
     conn.commit()
 
@@ -683,3 +725,100 @@ def actualizar_hypotekaAmortizacion(resultado, hipoteca_id, importe_amortizado):
         ))
 
     conn.commit()
+
+def buscar_hypoteka_asociadaCuenta(cuenta_asociada):
+    logger.info("BUSCAR Hypoteka a partir de cuenta.")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+            SELECT hipoteca_id
+            FROM hipotecas
+            WHERE cuenta_asociada = ?
+        """,
+        (
+            cuenta_asociada,
+        ))
+
+    fila = cursor.fetchone()
+
+    return fila
+
+def buscar_credito_asociadaCuenta(cuenta_asociada):
+    logger.info("BUSCAR Crédito a partir de cuenta.")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+            SELECT hipoteca_id
+            FROM hipotecas
+            WHERE cuenta_asociada = ?
+            AND es_Credito = 1
+        """,
+        (
+            cuenta_asociada,
+        ))
+
+    fila = cursor.fetchone()
+
+    return fila    
+
+def listar_hypotecasCreditos_asociados(account_asociada, tipo):
+    logger.info("Listar Crédito a partir de cuenta.")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    print("Cuenta Linked:", account_asociada, " Tipo: ", tipo)
+
+    if tipo == 0:
+        cursor.execute("""
+                SELECT hipoteca_id
+                FROM hipotecas
+                WHERE cuenta_asociada = ?
+                AND es_Credito = 0
+            """,
+            (
+                account_asociada,
+            ))
+    else:
+        cursor.execute("""
+                SELECT hipoteca_id
+                FROM hipotecas
+                WHERE cuenta_asociada = ?
+                AND es_Credito = 1
+            """,
+            (
+                account_asociada,
+            ))
+
+    fila = cursor.fetchall()
+    print("Return Hypo/Creds Linked: ", fila)
+
+    return fila 
+
+def listar_hypotecasCreditos_General(tipo):
+    logger.info("Listar Crédito a partir de cuenta.")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    if tipo == 0:
+        cursor.execute("""
+                SELECT hipo_id
+                FROM hipotecas
+                WHERE es_Credito = 0
+            """)
+    else:
+        cursor.execute("""
+                SELECT hipo_id
+                FROM hipotecas
+                WHERE es_Credito = 1
+            """
+            )
+
+    fila = cursor.fetchone()
+
+    return fila

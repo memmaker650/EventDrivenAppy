@@ -112,6 +112,7 @@ def handle_demandMortgage(command):
         "demandMortgage",
         {
             "account_id": command.account_id,
+            "mortgage_id": command.mortgage_id,
             "interest_Rate": command.rate,
             "amount": command.amount,
             "return_Period": command.period,
@@ -127,7 +128,7 @@ def handle_mortgagePayment(command):
         command.account_id,
         "mortgagePayment",
         {
-            "account_id": command.account_id,
+            "mortgage_id": command.mortgage_id,
             "amount": command.amount,
             "payment_date": command.date
         }
@@ -141,7 +142,7 @@ def handle_mortgageAmortisation(command):
         command.account_id,
         "mortgageAmortisation",
         {
-            "account_id": command.account_id,
+            "mortgage_id": command.mortgage_id,
             "amount": command.amount,
             "payment_date": command.date
         }
@@ -156,9 +157,11 @@ def handle_demandCredit(command):
         "demandCredit",
         {
             "account_id": command.account_id,
+            "credit_id": command.credit_id,
             "interest_Rate": command.rate,
             "amount": command.amount,
-            "return_Period": command.period
+            "return_Period": command.period,
+            "initialDate": command.dateInit
         }
     )  
 
@@ -170,7 +173,7 @@ def handle_CreditPayment(command):
         command.account_id,
         "CreditPayment",
         {
-            "account_id": command.account_id,
+            "credit_id": command.credit_id,
             "amount": command.amount,
             "payment_date": command.date
         }

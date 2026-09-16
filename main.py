@@ -21,6 +21,8 @@ class EventSourcingApp(toga.App):
     estadoTexto = str
     action_selector = toga.Selection()
     boton_execute = False
+    operationSelected = ""
+    listaCredHyp = []
     
     # Contructor de la clase de la GUI
     def __init__(self, *args, **kwargs):
@@ -34,7 +36,16 @@ class EventSourcingApp(toga.App):
 
         self.account_id = widget.value
 
-        self.refresh_balance()
+    def type_op_changed(self, widget):  
+        logging.info("Dentro de type_op_Changed")
+
+        if widget.value == "Hipoteca":
+            self.operationSelected = "hip"
+        else:
+             self.operationSelected = "cre"  
+
+        self.listaCredHyp = self.gD.listar_hypotecasCreditos_asociados(self.account_id, self.operationSelected)     
+        self.Lista_elementos.items = self.listaCredHyp
 
     def action_changed(self, widget):
         print("Dentro de Action_Changed")
@@ -193,7 +204,7 @@ class EventSourcingApp(toga.App):
 
         # Tiempo Hypoteca/Crédito
         self.yearsReturn = toga.TextInput(
-            placeholder="Periodo Retorno",
+            placeholder="Periodo Retorno (AÑOS)",
             style=Pack(width=200)
         )
 
@@ -367,11 +378,28 @@ class EventSourcingApp(toga.App):
 
         # Desplegable
         self.combo = toga.Selection(
-                items=["Opción 1", "Opción 2", "Opción 3"],
+                items=[],
+                style=Pack(margin=5),
+                on_change=self.account_changed
+                )
+        self.combo.items = self.gD.load_accounts()
+
+        self.hyp_cred = toga.Selection(
+                items=["Crédito", "Hipoteca"],
+                style=Pack(margin=5),
+                on_change=self.type_op_changed
+                )
+
+        self.Lista_elementos = toga.Selection(
+                items=[],
                 style=Pack(margin=5)
                 )
 
         # Primera tabla
+        titulo = toga.Label(
+            "Pagos Hipoteca",
+            style=Pack(margin_bottom=10)
+        )
         self.tabla_superior = toga.Table(
             columns=["ID", "Nombre"],
             data=[
@@ -383,16 +411,19 @@ class EventSourcingApp(toga.App):
 
         # Label
         self.label = toga.Label(
-            "Datos de entrada",
+            "Detalles Hipoteca :",
             style=Pack(margin=(10, 5))
         )
 
         # Segunda tabla
         self.tabla_inferior = toga.Table(
-        columns=["Campo", "Valor"],
+        columns=["Id Hipoteca", "VaMontantelor", "Interés", "Meses", "Cuota"],
         data=[
-        ["Producto", ""],
-        ["Cantidad", ""],
+        ["", "","", "","", ""],
+        ["", "","", "","", ""],
+        ["", "","", "","", "",],
+        ["", "","", "","", "",],
+        ["", "","", "","", "",],
         ],
         style=Pack(flex=1, margin=5)
         )
@@ -403,10 +434,13 @@ class EventSourcingApp(toga.App):
             )
 
         caja.add(self.combo)
+        caja.add(self.hyp_cred)
+        caja.add(self.Lista_elementos)
+        caja.add(titulo)
         caja.add(self.tabla_superior)
         caja.add(self.label)
-
         caja.add(self.tabla_inferior)
+
         self.main_window.content = caja
         self.main_window.show()
 
