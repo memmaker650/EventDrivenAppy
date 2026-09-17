@@ -41,8 +41,8 @@ class DemandMortgage:
         self.dateInit = dateInit
 
 class MortgagePayment:
-    def __init__(self, account_id, amount, datePay):
-        self.account_id = account_id
+    def __init__(self, hypoteka_id, amount, datePay):
+        self.mortgage_id = hypoteka_id
         self.amount = amount
         self.paymentDate = datePay
 

@@ -89,33 +89,39 @@ def load_accountInfo(cuenta):
 
 # Método para crear cuenta en la tabla ACCOUTS
 def crearCuenta(accid, owner):
-    conn = get_connection()
+    try:
+        conn = get_connection()
 
-    fechaActual = datetime.now().isoformat()
-    print("accidDB:", accid)
+        fechaActual = datetime.now().isoformat()
+        print("accidDB:", accid)
 
-    conn.execute(
-        """
-        INSERT INTO accounts(
-        account_id,
-        name,
-        created_at,
-        state,
-        money
+        conn.execute(
+            """
+            INSERT INTO accounts(
+            account_id,
+            name,
+            created_at,
+            state,
+            money
+            )
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                accid,
+                owner,
+                fechaActual, 
+                "open",
+                0.0,
+            ),
         )
-        VALUES (?, ?, ?, ?, ?)
-        """,
-        (
-            accid,
-            owner,
-            fechaActual, 
-            "open",
-            0.0,
-        ),
-    )
 
-    conn.commit()
-    conn.close()
+        conn.commit()
+        return True
+    except sqlite3.Error as e:
+        print(f"Error al insertar: {e}")
+        return False
+    finally:
+        conn.close()
 
 def load_accountMoney(dinero, cuenta):
     conn = get_connection()
@@ -260,7 +266,7 @@ def save_event(aggregate_id, event_type, event_data):
                 aggregate_id,
                 event_type,
                 json.dumps(event_data),
-                datetime.now().isoformat(),
+                datetime.now().isoformat(timespec='seconds'),
             ),
         )
 
@@ -317,6 +323,27 @@ def load_eventsFull(aggregate_id):
 
     rows = cur.fetchall()
     # print("Eventos:  ", rows)
+    conn.close()
+
+    return rows
+
+# Cargar los eventos de un id de una cuenta.
+def load_eventsOfType(aggregate_id, type):
+    conn = get_connection()
+
+    cur = conn.execute(
+        """
+        SELECT aggregate_id, event_type, event_data, created_at
+        FROM event_store
+        WHERE aggregate_id = ?
+        AND event_type = ?
+        ORDER BY id
+        """,
+        (aggregate_id, type),
+    )
+
+    rows = cur.fetchall()
+    print("Eventos:  ", rows)
     conn.close()
 
     return rows
@@ -807,18 +834,38 @@ def listar_hypotecasCreditos_General(tipo):
 
     if tipo == 0:
         cursor.execute("""
-                SELECT hipo_id
+                SELECT hipoteca_id
                 FROM hipotecas
                 WHERE es_Credito = 0
             """)
     else:
         cursor.execute("""
-                SELECT hipo_id
+                SELECT hipoteca_id
                 FROM hipotecas
                 WHERE es_Credito = 1
             """
             )
 
     fila = cursor.fetchone()
+
+    return fila
+
+def obtenerInfoCreditoHypoteka(hypcre_id):   
+    logger.info("Obtener detalles del Crédito Hipoteca.")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT cuenta_asociada, hipoteca_id, capital_inicial, tasa_anual, fecha_inicio, cuota_mensual, meses_totales, saldo_actual
+        FROM hipotecas
+        WHERE hipoteca_id = ?
+        """,
+        (
+            hypcre_id,
+        ))
+
+    fila = cursor.fetchone()
+    print("DB Details hypo/Cred: ", fila)
 
     return fila

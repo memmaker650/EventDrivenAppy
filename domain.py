@@ -125,12 +125,12 @@ def handle_mortgagePayment(command):
     logger.info("handle_Mortgage_Payment")
 
     save_event(
-        command.account_id,
+        command.mortgage_id,
         "mortgagePayment",
         {
             "mortgage_id": command.mortgage_id,
             "amount": command.amount,
-            "payment_date": command.date
+            "payment_date": command.paymentDate
         }
     )
 
@@ -139,12 +139,12 @@ def handle_mortgageAmortisation(command):
     logger.info("handle_Mortgage_Payment")
 
     save_event(
-        command.account_id,
+        command.mortgage_id,
         "mortgageAmortisation",
         {
             "mortgage_id": command.mortgage_id,
             "amount": command.amount,
-            "payment_date": command.date
+            "payment_date": command.paymentDate
         }
     )  
 
@@ -153,7 +153,7 @@ def handle_demandCredit(command):
     logger.info("handle_demandCredit")
 
     save_event(
-        command.account_id,
+        command.credit_id,
         "demandCredit",
         {
             "account_id": command.account_id,
@@ -170,7 +170,7 @@ def handle_CreditPayment(command):
     logger.info("handle_CreditPayment")
 
     save_event(
-        command.account_id,
+        command.credit_id,
         "CreditPayment",
         {
             "credit_id": command.credit_id,

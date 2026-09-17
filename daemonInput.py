@@ -73,6 +73,22 @@ class ProcesadoDatosDemonio():
 
         print("FIN procesar_json")
 
+    def procesar_json_hypCred(self, datos):
+        logger.info("procesar_json hyp_Cred")
+        print("procesar_json hyp_Cred")
+
+
+        self.mortgage_id = datos.get("account")
+        self.amount = float(datos.get("amount", 0))
+        self.PaymentDate = datos.get("payment_date")
+        print("Amount:", self.amount, " PayD: ", self.PaymentDate)
+
+        return self.amount, self.PaymentDate
+
+    def leerDatosJSON(self, input):
+        logger.info("LEer_JSON hyp_Cred")
+        return json.loads(input)
+
 if __name__ == "__main__":
 
     for file in os.listdir(carpeta_entrada):

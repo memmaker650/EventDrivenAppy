@@ -23,6 +23,8 @@ class EventSourcingApp(toga.App):
     boton_execute = False
     operationSelected = ""
     listaCredHyp = []
+    dataCredHyp = ["", "", "", "", "", "", "", ""]
+    dataEventosPagosHypCred = []
     
     # Contructor de la clase de la GUI
     def __init__(self, *args, **kwargs):
@@ -30,6 +32,11 @@ class EventSourcingApp(toga.App):
         self.estadoApp = "info"
         self.estadoTexto = "Inicial"
         self.gD = gestionDatos.gestionDatos(app=self)
+
+    def refrescar_cuentas(self):
+        self.account_input.value = self.gD.initBusiness()
+        print("Account_id refreshed: ", self.account_id)
+        self.account_selector.items = self.gD.load_accounts()   
 
     def account_changed(self, widget):  
         logging.info("Dentro de Account_Changed")
@@ -47,12 +54,49 @@ class EventSourcingApp(toga.App):
         self.listaCredHyp = self.gD.listar_hypotecasCreditos_asociados(self.account_id, self.operationSelected)     
         self.Lista_elementos.items = self.listaCredHyp
 
+    def negocioTraerDatosCredHipotecas(self, widget):
+        id = widget.value
+
+        self.dataEventosPagosHypCred = self.gD.traer_EventosPago_CreditoHypoteka(id, "mortgagePayment")
+        self.dataCredHyp = self.gD.traer_Info_CreditoHypoteka(id)
+        print("Datos Hipoteca: ", self.dataCredHyp)
+        total = 0
+
+        self.tabla_superior.data.clear()
+
+        for dataHC in self.dataEventosPagosHypCred:
+            self.tabla_superior.data.append(
+                [
+                    dataHC[0],
+                    dataHC[1],
+                ]
+            )
+            total += dataHC[0]
+        self.tabla_superior.data.append(
+                [
+                    total,
+                    "TOTAL",
+                ]
+        )
+
+        self.tabla_inferior.data.clear()
+        self.tabla_inferior.data.append(
+            [
+                self.dataCredHyp[1],
+                self.dataCredHyp[2],
+                self.dataCredHyp[3],
+                self.dataCredHyp[4],
+                self.dataCredHyp[5],
+                self.dataCredHyp[6],
+                self.dataCredHyp[7]
+            ]
+        )
+
     def action_changed(self, widget):
         print("Dentro de Action_Changed")
         logging.info("Dentro de Action_Changed")
 
         accion = widget.value
-        # logging.info("WActión: ", accion)
 
         # Ocultar todo por defecto
         self.amount_input.style.visibility = "hidden"
@@ -90,6 +134,8 @@ class EventSourcingApp(toga.App):
         )    
         
     def actualizar_estado(self, texto, estado):
+        logging.info("Dentro actualizar_estado")
+
         self.estadoApp = estado
         self.estadoTexto = texto
 
@@ -105,6 +151,9 @@ class EventSourcingApp(toga.App):
         elif self.estadoApp == "ok" or self.estadoApp == "OK" or self.estadoApp == "Ok":
             self.label_info.text = self.estadoTexto
             self.label_info.style.color = GREEN
+
+        # Refresco los datos tras creación cuenta.
+        self.refrescar_cuentas()    
 
     @staticmethod
     def mensajeUsuario(self, mensaje, color):
@@ -392,7 +441,8 @@ class EventSourcingApp(toga.App):
 
         self.Lista_elementos = toga.Selection(
                 items=[],
-                style=Pack(margin=5)
+                style=Pack(margin=5),
+                on_change=self.negocioTraerDatosCredHipotecas
                 )
 
         # Primera tabla
@@ -400,11 +450,12 @@ class EventSourcingApp(toga.App):
             "Pagos Hipoteca",
             style=Pack(margin_bottom=10)
         )
+
         self.tabla_superior = toga.Table(
             columns=["ID", "Nombre"],
             data=[
-            [1, "Juan"],
-            [2, "María"],
+                ["", ""],
+                ["", ""],
             ],
             style=Pack(flex=1, margin=5)
             )
@@ -415,17 +466,13 @@ class EventSourcingApp(toga.App):
             style=Pack(margin=(10, 5))
         )
 
-        # Segunda tabla
+        # Segunda tabla 
         self.tabla_inferior = toga.Table(
-        columns=["Id Hipoteca", "VaMontantelor", "Interés", "Meses", "Cuota"],
-        data=[
-        ["", "","", "","", ""],
-        ["", "","", "","", ""],
-        ["", "","", "","", "",],
-        ["", "","", "","", "",],
-        ["", "","", "","", "",],
-        ],
-        style=Pack(flex=1, margin=5)
+            columns=["Id Hipoteca", "Montante", "Interés", "Meses", "Cuota"],
+            data=[
+            [self.dataCredHyp[1], self.dataCredHyp[2], self.dataCredHyp[3], self.dataCredHyp[4],self.dataCredHyp[5]],
+            ],
+            style=Pack(flex=1, margin=5)
         )
 
         # Contenedor principal

@@ -7,6 +7,7 @@ import database
 import commands 
 import domain
 import hypotekas
+import daemonInput
 
 logger = logging.getLogger(__name__)
 
@@ -63,13 +64,16 @@ class gestionDatos():
             resul = domain.handle_create_account(cmd)
 
             # self.account_selector.items = database.load_accounts()
-        database.crearCuenta(id_input, owner)
+        flag = database.crearCuenta(id_input, owner)
 
-        # self.refresh_balance()
-        # self.gestion_mensaje_info(resul)
+        if flag:
+            self.app.actualizar_estado("Cuenta creada", "OK") 
+        else:
+            self.app.actualizar_estado("ERROR ! Cuenta NO CREADA", "Error")  
 
     def create_account_block(self, id_input, ow_input):
         logging.info("Dentro de create_account_block.")
+
         if isinstance(ow_input, str):
             owner = ow_input
         else:
@@ -88,10 +92,12 @@ class gestionDatos():
 
         self.account_id = id_input  
 
-        database.crearCuenta(self.account_id, owner)
+        flag = database.crearCuenta(self.account_id, owner)
 
-        # self.refresh_balance()
-        # self.gestion_mensaje_info(resul)    
+        if flag:
+            self.app.actualizar_estado("Cuenta creada", "OK") 
+        else:
+            self.app.actualizar_estado("ERROR ! Cuenta NO CREADA", "Error")   
 
     def ejecutarAccion(self, widget, accion, origen, cantidad, destino, propietario, tienda, rate, dateFin):
         logging.info("into de ejecutarAccion.")
@@ -142,7 +148,7 @@ class gestionDatos():
                 rate,
                 cantidad,
                 dateFin,
-                datetime.now().isoformat()
+                datetime.now().isoformat(timespec='seconds')
             )
 
             fecha_futura = datetime.now() + relativedelta(years=int(dateFin))
@@ -155,11 +161,13 @@ class gestionDatos():
         elif accion == "pago_hipoteca":
             print("Jump-2_handle_MortgagePayment")
 
-            hyp_id = buscar_hypoteka_asociadaCuenta(origen)
+            hyp_id = database.buscar_hypoteka_asociadaCuenta(origen)
+            print("hyp_id: ", hyp_id)
 
             cmd = commands.MortgagePayment(
-                hyp_id,
-                cantidad
+                hyp_id[0],
+                cantidad,
+                datetime.now().isoformat(timespec='seconds')
             )
 
             domain.handle_mortgagePayment(cmd)
@@ -175,7 +183,7 @@ class gestionDatos():
                 rate,
                 cantidad,
                 dateFin,
-                datetime.now().isoformat()
+                datetime.now().isoformat(timespec='seconds')
             )
             
             fecha_futura = datetime.now() + relativedelta(years=int(dateFin))
@@ -192,7 +200,8 @@ class gestionDatos():
 
             cmd = commands.CreditPayment(
                 credit_id,
-                cantidad
+                cantidad,
+                datetime.now().isoformat(timespec='seconds')
             )
 
             domain.handle_CreditPayment(cmd)
@@ -301,13 +310,21 @@ class gestionDatos():
         else: 
             return database.listar_hypotecasCreditos_asociados(origen, 1)
 
-    def gestion_mensaje_info (self, resultado):
-        logging.info("gestion_mensaje_info")
-        if resultado["ok"]: 
-            estadoApp = "ok"
-            self.label_info.text = resultado["mensaje"]
-            self.label_info.style.color = "green"
-        else:
-            estadoApp = "error"
-            self.label_info.text = "¡ ERROR !" + " " + resultado["mensaje"],
-            self.label_info.style.color = "red"
+    def traer_Info_CreditoHypoteka(self, hip_id):
+        logging.info("Trer info completa: pagos Hipoteca.")
+
+        info = database.obtenerInfoCreditoHypoteka(hip_id)
+        return info
+
+    def traer_EventosPago_CreditoHypoteka(self, hip_id, tipo):
+        logging.info("Trer info completa: pagos Hipoteca.")
+
+        info = database.load_eventsOfType(hip_id, tipo)
+        processJSON = daemonInput.ProcesadoDatosDemonio()
+        resultArray = []
+        for inf in info:
+            dataJSON = processJSON.leerDatosJSON(inf[2])
+            resultArray.append(processJSON.procesar_json_hypCred(dataJSON))
+        
+        print("resultArray:", resultArray)
+        return resultArray
