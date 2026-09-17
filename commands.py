@@ -47,8 +47,8 @@ class MortgagePayment:
         self.paymentDate = datePay
 
 class MortgageAmortisation:
-    def __init__(self, account_id, amount, datePay):
-        self.account_id = account_id
+    def __init__(self, hypoteka_id, amount, datePay):
+        self.mortgage_id = hypoteka_id
         self.amount = amount
         self.paymentDate = datePay        
 
@@ -62,17 +62,19 @@ class DemandCredit:
         self.dateInit = dateInit
 
 class CreditPayment:
-    def __init__(self, account_id, amount, datePay):
-        self.account_id = account_id
+    def __init__(self, credit_id, amount, datePay):
+        self.credit_id = credit_id
         self.amount = amount
         self.paymentDate = datePay        
 
 class Overdraft:
-    def __init__(self, account_id, amount, shop):
+    def __init__(self, account_id, amount, shop=None):
         self.account_id = account_id
         self.amount = amount
+        self.shop = shop
 
 class CloseAccount:
-    def __init__(self, account_id, amount):
+    def __init__(self, account_id, amount=0):
         self.account_id = account_id
+        self.amount = amount
         self.state = "closed"

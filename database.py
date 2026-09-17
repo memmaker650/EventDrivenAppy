@@ -62,10 +62,17 @@ def create_AccountTable():
     conn.commit()
     conn.close() 
 
+def _as_id(cuenta):
+    if isinstance(cuenta, (tuple, list)):
+        return cuenta[0]
+    return cuenta
+
+
 # Buscar info sobre una cuenta.
 def load_accountInfo(cuenta):
     conn = get_connection()
     cursor = conn.cursor()
+    cuenta = _as_id(cuenta)
 
     print("cuenta Buscar: ", cuenta)
 
@@ -387,7 +394,7 @@ def load_ownerForAccountInEvent(cuenta):
 def load_moneyForAccountInEvent(cuenta):
     conn = get_connection()
 
-    cuenta = cuenta[0]
+    cuenta = _as_id(cuenta)
 
     print("DB cuenta: ", cuenta)
     cur = conn.execute("""
@@ -407,7 +414,7 @@ def load_moneyForAccountInEvent(cuenta):
 def store_moneyForAccount(dinero, cuenta):
     conn = get_connection()
 
-    cuenta = cuenta[0]
+    cuenta = _as_id(cuenta)
 
     print("DB cuenta: ", cuenta)
     cur = conn.execute("""
@@ -463,10 +470,10 @@ def check_num_accounts_user():
     conn = get_connection()
 
     cuentas = conn.execute("""
-        SELECT owner, COUNT(*) AS num_cuentas
-        FROM account
-        GROUP BY owner
-        ORDER BY owner asc;
+        SELECT name, COUNT(*) AS num_cuentas
+        FROM accounts
+        GROUP BY name
+        ORDER BY name asc;
     """).fetchall()
 
     conn.close()
@@ -516,18 +523,18 @@ def check_overdraft():
     conn = get_connection()
 
     cuentas = conn.execute("""
-        SELECT account, money
-        FROM account
+        SELECT account_id, money
+        FROM accounts
         ORDER BY money asc
-    """)
+    """).fetchall()
 
     conn.close()
 
-    for cuenta in cuentas:        
+    for cuenta in cuentas:
         money = cuenta[1]
         if money < 0:
-            print("Cuenta: "+cuenta[1]+"Saldo: " +money)
-            logger.info("Cuenta: "+cuenta[1]+"Saldo: " +money)
+            print("Cuenta: " + str(cuenta[0]) + " Saldo: " + str(money))
+            logger.info("Cuenta: " + str(cuenta[0]) + " Saldo: " + str(money))
 
     return cuentas
 

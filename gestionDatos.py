@@ -15,9 +15,13 @@ class gestionDatos():
     # Variables para communicación con la UI
     boton_execution = bool
 
-    def __init__(self, app):
+    def __init__(self, app=None):
         self.app = app
         self.manager = hypotekas.HipotecaManager()
+
+    def _actualizar_estado(self, mensaje, tipo):
+        if self.app is not None:
+            self.app.actualizar_estado(mensaje, tipo)
 
     def initBusiness(self):
         database.init_db()
@@ -67,9 +71,9 @@ class gestionDatos():
         flag = database.crearCuenta(id_input, owner)
 
         if flag:
-            self.app.actualizar_estado("Cuenta creada", "OK") 
+            self._actualizar_estado("Cuenta creada", "OK") 
         else:
-            self.app.actualizar_estado("ERROR ! Cuenta NO CREADA", "Error")  
+            self._actualizar_estado("ERROR ! Cuenta NO CREADA", "Error")  
 
     def create_account_block(self, id_input, ow_input):
         logging.info("Dentro de create_account_block.")
@@ -95,11 +99,11 @@ class gestionDatos():
         flag = database.crearCuenta(self.account_id, owner)
 
         if flag:
-            self.app.actualizar_estado("Cuenta creada", "OK") 
+            self._actualizar_estado("Cuenta creada", "OK") 
         else:
-            self.app.actualizar_estado("ERROR ! Cuenta NO CREADA", "Error")   
+            self._actualizar_estado("ERROR ! Cuenta NO CREADA", "Error")   
 
-    def ejecutarAccion(self, widget, accion, origen, cantidad, destino, propietario, tienda, rate, dateFin):
+    def ejecutarAccion(self, widget, accion, origen, cantidad, destino=None, propietario=None, tienda=None, rate=None, dateFin=None):
         logging.info("into de ejecutarAccion.")
         print("into de ejecutarAccion.")
         # print("into de ejecutarAccion.")
@@ -153,7 +157,7 @@ class gestionDatos():
 
             fecha_futura = datetime.now() + relativedelta(years=int(dateFin))
             if origen == None: 
-                self.app.actualizar_estado("No hay cuenta asociada", "Error")
+                self._actualizar_estado("No hay cuenta asociada", "Error")
             else:
                 domain.handle_demandMortgage(cmd)
                 self.manager.crear_hipoteca(origen, cantidad, rate, datetime.now(), fecha_futura) 
@@ -188,7 +192,7 @@ class gestionDatos():
             
             fecha_futura = datetime.now() + relativedelta(years=int(dateFin))
             if origen == None: 
-                self.app.actualizar_estado("No hay cuenta asociada", "Error")
+                self._actualizar_estado("No hay cuenta asociada", "Error")
             else:
                 domain.handle_demandCredit(cmd)
                 self.manager.crear_hipoteca(origen, cantidad, rate, datetime.now(), fecha_futura, 1)  # 1 porque es un crédito. 
@@ -197,14 +201,16 @@ class gestionDatos():
             print("Jump-2_handle_CreditPayment")
 
             credit_id = database.buscar_credito_asociadaCuenta(origen)
+            if not credit_id:
+                self._actualizar_estado("No hay crédito asociado", "Error")
+            else:
+                cmd = commands.CreditPayment(
+                    credit_id[0],
+                    cantidad,
+                    datetime.now().isoformat(timespec='seconds')
+                )
 
-            cmd = commands.CreditPayment(
-                credit_id,
-                cantidad,
-                datetime.now().isoformat(timespec='seconds')
-            )
-
-            domain.handle_CreditPayment(cmd)
+                domain.handle_CreditPayment(cmd)
 
         elif accion == "transferencia":
             print("Jump-2_handle_MoneyTransfer")
@@ -269,36 +275,35 @@ class gestionDatos():
         print(idsEvents)
 
         for x in idsEvents:
-            datos = database.load_accountInfo(x)
+            account_id = database._as_id(x)
+            datos = database.load_accountInfo(account_id)
 
             if not datos:      # datos == []
                 print("La cuenta no existe")
-                x = x[0]
-                print("ID no creado:", x)
-                duegno = database.load_ownerForAccountInEvent(x)
+                print("ID no creado:", account_id)
+                duegno = database.load_ownerForAccountInEvent(account_id)
                 print("Dueño: ", duegno)
-                self.create_account_block(x, duegno)
-            else:
-                montante = 0.0
-                print("Dentro cálculo montante FINAL.")
-                # Cuenta creada, cálculo del montante de la cuenta.
-                cargas = database.load_moneyForAccountInEvent(x)
-                if cargas is None:
-                    logging.info("Es None")
-                elif not cargas:
-                    logging.info("Está vacío")
-                else:
-                    for nombre, valor in cargas:
-                        if nombre == "MoneyDeposited":
-                            montante += float(valor)
-                        else:
-                            montante -= float(valor)
+                self.create_account_block(account_id, duegno)
 
-                resultado = database.store_moneyForAccount(montante, x)
-                if resultado == 1:
-                    self.label_info = "Montante actualizado !!"
-                else:
-                    self.label_info = "Error guardado Montante - KO !!"
+            montante = 0.0
+            print("Dentro cálculo montante FINAL.")
+            cargas = database.load_moneyForAccountInEvent(account_id)
+            if cargas is None:
+                logging.info("Es None")
+            elif not cargas:
+                logging.info("Está vacío")
+            else:
+                for nombre, valor in cargas:
+                    if nombre == "MoneyDeposited":
+                        montante += float(valor)
+                    else:
+                        montante -= float(valor)
+
+            resultado = database.store_moneyForAccount(montante, account_id)
+            if resultado == 1:
+                self.label_info = "Montante actualizado !!"
+            else:
+                self.label_info = "Error guardado Montante - KO !!"
 
         print("TERMINADO TRATAMIENTO EN BLOQUE !!")
         logging.info("TERMINADO TRATAMIENTO EN BLOQUE !!")

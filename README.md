@@ -66,3 +66,16 @@ resultado = manager.amortizacion_anticipada(
 )
 
 print(resultado)
+
+*** TESTs
+----------------
+Hay 58 tests en verde. Se pueden lanzar desde EventDrivenApplication con:
+
+python -m pytest tests -q
+La carpeta tests queda así:
+
+conftest.py: añade el proyecto al PYTHONPATH y usa un SQLite temporal, para no tocar events.db.
+test_negocio.py: gestionDatos.py e hypotekas.py (cuotas, amortización, acciones de cuenta, hipotecas/créditos).
+test_db.py: métodos de database.py (cuentas, eventos, hipotecas, IDs).
+test_event.py: commands.py, domain.py y events.py.
+test_json.py: daemonInput.py (parseo JSON, handler y movimiento de ficheros).

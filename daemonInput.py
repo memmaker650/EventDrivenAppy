@@ -40,21 +40,22 @@ class ProcesadoDatosDemonio():
 
     def procesar_fichero(self, ruta):
         print(f"Procesando {ruta}")
-        with open(ruta, "r", encoding="utf-8") as f:
-            datos = json.load(f)
+        nombre = fichero if isinstance(fichero, str) and fichero.endswith(".json") else os.path.basename(ruta)
         try:
+            with open(ruta, "r", encoding="utf-8") as f:
+                datos = json.load(f)
             for evento in datos:
                 print(evento)
 
                 self.procesar_json(evento)
                 print("Ruta origen: ", ruta)
-                print("Ruta destiy: ", os.path.join(carpeta_tratados, fichero))
+                print("Ruta destiy: ", os.path.join(carpeta_tratados, nombre))
                 gDd = gestionDatos.gestionDatos()
                 gDd.ejecutarAccion(None, self.event_type, self.aggregate_id, self.amount, self.destiny, self.owner)
-            shutil.move(ruta, os.path.join(carpeta_tratados, fichero))
+            shutil.move(ruta, os.path.join(carpeta_tratados, nombre))
         except Exception as e:
             print(f"Error: {e}")
-            shutil.move(ruta, os.path.join(carpeta_error, fichero))
+            shutil.move(ruta, os.path.join(carpeta_error, nombre))
 
         logging.info("Fin Procesado Fichero f{ruta}")
 

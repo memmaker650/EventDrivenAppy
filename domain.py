@@ -175,9 +175,9 @@ def handle_CreditPayment(command):
         {
             "credit_id": command.credit_id,
             "amount": command.amount,
-            "payment_date": command.date
+            "payment_date": command.paymentDate
         }
-    )    
+    )     
 
 def handle_Overdraft(command):
     print("handle_deposit")
