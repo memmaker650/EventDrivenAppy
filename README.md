@@ -71,11 +71,21 @@ print(resultado)
 ----------------
 Hay 58 tests en verde. Se pueden lanzar desde EventDrivenApplication con:
 
+Librerías a instalar:
+- pip install pytest pytest-cov
+- pip install pytest-html
+
 python -m pytest tests -q
+
+pytest --cov=. --cov-report=html
+pytest --html=./tests/results-cov/informe.html
+pytest --cov=. --cov-report=html:./tests/results-cov/htmlcov --html=./tests/results-cov/test_report.html (MEJOR !!)
+NOTA: Si acaso crear a mano la carpeta htmlcov
+
 La carpeta tests queda así:
 
-conftest.py: añade el proyecto al PYTHONPATH y usa un SQLite temporal, para no tocar events.db.
-test_negocio.py: gestionDatos.py e hypotekas.py (cuotas, amortización, acciones de cuenta, hipotecas/créditos).
-test_db.py: métodos de database.py (cuentas, eventos, hipotecas, IDs).
-test_event.py: commands.py, domain.py y events.py.
-test_json.py: daemonInput.py (parseo JSON, handler y movimiento de ficheros).
+* conftest.py: añade el proyecto al PYTHONPATH y usa un SQLite temporal, para no tocar events.db.
+* test_negocio.py: gestionDatos.py e hypotekas.py (cuotas, amortización, acciones de cuenta, hipotecas/créditos).
+* test_db.py: métodos de database.py (cuentas, eventos, hipotecas, IDs).
+* test_event.py: commands.py, domain.py y events.py.
+* test_json.py: daemonInput.py (parseo JSON, handler y movimiento de ficheros).
