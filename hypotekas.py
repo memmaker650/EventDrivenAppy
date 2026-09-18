@@ -10,12 +10,6 @@ logger = logging.getLogger(__name__)
 class HipotecaManager:
     def __init__(self):
         database.init_db()
-        self.crear_tablas()
-
-    def crear_tablas(self):
-        database.create_hipotecasTable()
-        database.create_amortizaciones_anticipadasTable()
-
 
     def meses_entre_fechas(self, fecha_inicio, fecha_fin):
         logger.info("Método cálculo entre fechas.")

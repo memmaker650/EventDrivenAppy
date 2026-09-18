@@ -37,20 +37,27 @@ class gestionDatos():
         return database.load_eventsFull(cuentaSelec)       
 
     def domainAccount(self, account):
-        return domain.load_account(account)    
+        return domain.load_account(account)  
 
-    def create_account(self, widget, id_input, ow_input):
+    def traer_listaNacionalidades(self):
+        return database.traer_listaNacionalidades()
+
+    def create_account(self, widget, id_input, ow_input, family, idcardnumber, address, city, nationality):
         logging.info("Dentro de create_account.")
-        if isinstance(ow_input, str):
-            owner = ow_input
-        else:
-            if ow_input is not None:
-                owner = ow_input.value
-            else:
-                mensajeUsuario("Error Crear Cuenta, dueño no rellenado.", "red")
+
+        campos = {
+            "NOMBRE": ow_input,
+            "APELLIDOS": family,
+            "DNI": idcardnumber,
+            "DIRECCIÓN": address,
+            "CIUDAD": city,
+            "NACIONALIDAD": nationality
+            }
+
+        for nombre, valor in campos.items():
+            if valor is None or valor == "":
+                self._actualizar_estado(f"Error!!! Cuenta NO creada, {nombre} NO rellenado.", "Error")
                 return False
-        print("Owner: ", owner)
-        print("ACC-id: ", id_input)
 
         if not owner:
             self.label_info.text = "Debe indicar un nombre"

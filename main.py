@@ -192,11 +192,50 @@ class EventSourcingApp(toga.App):
             "EggBank - Operaciones por eventos.",
             style=Pack(margin=10)
             )
-
-        self.owner_input = toga.TextInput(
-            placeholder="Nombre del titular",
+        self.Titulo2 = toga.Label(
+            "Datos cliente",
             style=Pack(margin=10)
             )
+        name_box = toga.Box(style=Pack(direction=ROW, margin=10))
+
+        self.owner_input = toga.TextInput(
+            placeholder="Nombre",
+            style=Pack(flex=1, margin_right=5)
+        )
+
+        self.family_name_input = toga.TextInput(
+            placeholder="Apellidos",
+            style=Pack(flex=1, margin_left=5)
+        )
+
+        name_box.add(self.owner_input)
+        name_box.add(self.family_name_input)
+
+        self.doc_id_input = toga.TextInput(
+            placeholder="Documento de identidad",
+            style=Pack(margin=10)
+        )
+
+        address_box = toga.Box(style=Pack(direction=ROW, margin=10))
+
+        self.address_input = toga.TextInput(
+            placeholder="Dirección",
+            style=Pack(flex=2, margin_right=5)
+        )
+
+        self.city_input = toga.TextInput(
+            placeholder="Ciudad",
+            style=Pack(flex=1, margin_left=5)
+        )
+
+        address_box.add(self.address_input)
+        address_box.add(self.city_input)
+
+        self.nationality_selection = toga.Selection(
+            items=[],
+            style=Pack(margin=10)
+        )
+        self.nationality_selection.items = self.gD.traer_listaNacionalidades()
 
         self.account_input = toga.TextInput(
             value=self.account_id,
@@ -208,7 +247,7 @@ class EventSourcingApp(toga.App):
 
         create_btn = toga.Button(
             "Crear cuenta",
-            on_press=lambda widget: self.gD.create_account(widget, self.account_input.value, self.owner_input)
+            on_press=lambda widget: self.gD.create_account(widget, self.account_input.value, self.owner_input.value, self.family_name_input.value, self.doc_id_input.value, self.address_input.value, self.city_input.value, self.nationality_selection)
         )   
 
         btn_hypotekas = toga.Button(
@@ -316,7 +355,11 @@ class EventSourcingApp(toga.App):
             children=[
                 self.titulo,
                 self.account_input,
-                self.owner_input,
+                self.Titulo2,
+                name_box,
+                self.doc_id_input,
+                address_box,
+                self.nationality_selection,
                 create_btn,
                 self.espacio,
                 self.separador,
@@ -383,7 +426,11 @@ class EventSourcingApp(toga.App):
             self.cuenta[2],
             )
         ]
-
+        
+        label_detallesCuenta = toga.Label(
+            "Detalles cuenta: ",
+            style=Pack(margin_bottom=10)
+        )
         # Tabla
         self.tabla_cuenta = toga.Table(
             columns=[
@@ -411,6 +458,11 @@ class EventSourcingApp(toga.App):
             for evento in self.EventosCuenta 
             ]
 
+        label_EventosCuenta = toga.Label(
+            "Detalles cuenta: ",
+            style=Pack(margin_bottom=10)
+        )
+
         self.tablaEventos = toga.Table(
             columns=[
                 "ID cuenta",
@@ -430,8 +482,10 @@ class EventSourcingApp(toga.App):
 
         box.add(titulo)
         box.add(self.account_selector)
+        box.add(label_detallesCuenta)
         box.add(self.tabla_cuenta)
         box.add(self.espacio)
+        box.add(label_EventosCuenta)
         box.add(self.tablaEventos)
         box.add(self.btn_CheckEvents)
 

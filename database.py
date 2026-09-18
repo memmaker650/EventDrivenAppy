@@ -28,6 +28,36 @@ def init_db():
     create_eventsTable()
     create_AccountTable()
     create_Account_states()
+    crear_tablaDatos_Nacionalidad()
+    create_hipotecasTable()
+    create_amortizaciones_anticipadasTable()
+    comprobar_FK_activas()
+
+def comprobar_FK_activas():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        PRAGMA foreign_keys;
+    """)
+
+    datos = cursor.fetchone()
+
+    if datos[0] == 0:
+        print(f"FKs DESactivadas: {datos[0]}")
+        logger.error(f"FKs DESactivadas: {datos[0]}")
+        cursor.execute("""
+            PRAGMA foreign_keys = ON;
+        """)
+        logger.info("FKs Activadas: ")
+    elif datos[0] == 1:
+        print(f"FKs Activas: {datos[0]}")
+        logger.info(f"FKs Activas: {datos[0]}")
+    else: 
+        print(f"FKs estado RARO: {datos[0]}")
+        logger.warning(f"FKs estado RARO: {datos[0]}")
+
+    conn.close()
 
 def create_eventsTable():
     conn = get_connection()
@@ -53,6 +83,12 @@ def create_AccountTable():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         account_id TEXT NOT NULL,
         name TEXT NOT NULL,
+        family_name TEXT NOT NULL,
+        id_doc TEXT NOT NULL,
+        email TEXT NOT NULL,
+        address TEXT NOT NULL,
+        city TEXT NOT NULL,
+        nationality TEXT NOT NULL,
         created_at DATE DEFAULT (datetime('now')),
         state TEXT NOT NULL,
         money REAL NOT NULL DEFAULT 0.0
@@ -66,7 +102,6 @@ def _as_id(cuenta):
     if isinstance(cuenta, (tuple, list)):
         return cuenta[0]
     return cuenta
-
 
 # Buscar info sobre una cuenta.
 def load_accountInfo(cuenta):
@@ -100,7 +135,6 @@ def crearCuenta(accid, owner):
         conn = get_connection()
 
         fechaActual = datetime.now().isoformat()
-        print("accidDB:", accid)
 
         conn.execute(
             """
@@ -876,3 +910,106 @@ def obtenerInfoCreditoHypoteka(hypcre_id):
     print("DB Details hypo/Cred: ", fila)
 
     return fila
+
+def traer_listaNacionalidades():
+    logger.info("Crear y cargar datos Nacionalidad")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT country_code || ' - ' || country_name
+        FROM countries
+        """
+    )
+
+    countries = [row[0] for row in cursor.fetchall()]
+    
+    return countries
+
+def crear_tablaDatos_Nacionalidad():
+    logger.info("Crear y cargar datos Nacionalidad")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""CREATE TABLE IF NOT EXISTS countries (
+    country_code TEXT PRIMARY KEY,
+    country_name TEXT NOT NULL)"""
+    )
+
+    conn.commit()
+
+    cursor.execute("SELECT COUNT(*) FROM countries")
+
+    num_rows = cursor.fetchone()[0]
+
+    if num_rows == 0:
+        # Insertar países
+        cursor.execute("""INSERT INTO countries VALUES ('ES','España');""")
+        cursor.execute("""INSERT INTO countries VALUES ('PT','Portugal');""")
+        cursor.execute("""INSERT INTO countries VALUES ('FR','Francia');""")
+        cursor.execute("""INSERT INTO countries VALUES ('DE','Alemania');""")
+        cursor.execute("""INSERT INTO countries VALUES ('IT','Italia');""")
+        cursor.execute("""INSERT INTO countries VALUES ('GB','Reino Unido');""")
+        cursor.execute("""INSERT INTO countries VALUES ('IE','Irlanda');""")
+        cursor.execute("""INSERT INTO countries VALUES ('NL','Países Bajos');""")
+        cursor.execute("""INSERT INTO countries VALUES ('BE','Bélgica');""")
+        cursor.execute("""INSERT INTO countries VALUES ('LU','Luxemburgo');""")
+        cursor.execute("""INSERT INTO countries VALUES ('CH','Suiza');""")
+        cursor.execute("""INSERT INTO countries VALUES ('AT','Austria');""")
+        cursor.execute("""INSERT INTO countries VALUES ('SE','Suecia');""")
+        cursor.execute("""INSERT INTO countries VALUES ('NO','Noruega');""")
+        cursor.execute("""INSERT INTO countries VALUES ('DK','Dinamarca');""")
+        cursor.execute("""INSERT INTO countries VALUES ('FI','Finlandia');""")
+        cursor.execute("""INSERT INTO countries VALUES ('PL','Polonia');""")
+        cursor.execute("""INSERT INTO countries VALUES ('CZ','República Checa');""")
+        cursor.execute("""INSERT INTO countries VALUES ('SK','Eslovaquia');""")
+        cursor.execute("""INSERT INTO countries VALUES ('HU','Hungría');""")
+        cursor.execute("""INSERT INTO countries VALUES ('RO','Rumanía');""")
+        cursor.execute("""INSERT INTO countries VALUES ('BG','Bulgaria');""")
+        cursor.execute("""INSERT INTO countries VALUES ('GR','Grecia');""")
+        cursor.execute("""INSERT INTO countries VALUES ('HR','Croacia');""")
+        cursor.execute("""INSERT INTO countries VALUES ('SI','Eslovenia');""")
+        cursor.execute("""INSERT INTO countries VALUES ('EE','Estonia');""")
+        cursor.execute("""INSERT INTO countries VALUES ('LV','Letonia');""")
+        cursor.execute("""INSERT INTO countries VALUES ('LT','Lituania');""")
+
+        cursor.execute("""INSERT INTO countries VALUES ('US','Estados Unidos');""")
+        cursor.execute("""INSERT INTO countries VALUES ('CA','Canadá');""")
+        cursor.execute("""INSERT INTO countries VALUES ('MX','México');""")
+        cursor.execute("""INSERT INTO countries VALUES ('BR','Brasil');""")
+        cursor.execute("""INSERT INTO countries VALUES ('AR','Argentina');""")
+        cursor.execute("""INSERT INTO countries VALUES ('CL','Chile');""")
+        cursor.execute("""INSERT INTO countries VALUES ('CO','Colombia');""")
+        cursor.execute("""INSERT INTO countries VALUES ('PE','Perú');""")
+        cursor.execute("""INSERT INTO countries VALUES ('UY','Uruguay');""")
+        cursor.execute("""INSERT INTO countries VALUES ('PY','Paraguay');""")
+        cursor.execute("""INSERT INTO countries VALUES ('VE','Venezuela');""")
+        cursor.execute("""INSERT INTO countries VALUES ('EC','Ecuador');""")
+        cursor.execute("""INSERT INTO countries VALUES ('BO','Bolivia');""")
+    
+        cursor.execute("""INSERT INTO countries VALUES ('CN','China');""")
+        cursor.execute("""INSERT INTO countries VALUES ('JP','Japón');""")
+        cursor.execute("""INSERT INTO countries VALUES ('KR','Corea del Sur');""")
+        cursor.execute("""INSERT INTO countries VALUES ('IN','India');""")
+        cursor.execute("""INSERT INTO countries VALUES ('SG','Singapur');""")
+        cursor.execute("""INSERT INTO countries VALUES ('TH','Tailandia');""")
+        cursor.execute("""INSERT INTO countries VALUES ('VN','Vietnam');""")
+        cursor.execute("""INSERT INTO countries VALUES ('MY','Malasia');""")
+        cursor.execute("""INSERT INTO countries VALUES ('ID','Indonesia');""")
+        cursor.execute("""INSERT INTO countries VALUES ('PH','Filipinas');""")
+
+        cursor.execute("""INSERT INTO countries VALUES ('AU','Australia');""")
+        cursor.execute("""INSERT INTO countries VALUES ('NZ','Nueva Zelanda');""")
+
+        cursor.execute("""INSERT INTO countries VALUES ('MA','Marruecos');""")
+        cursor.execute("""INSERT INTO countries VALUES ('DZ','Argelia');""")
+        cursor.execute("""INSERT INTO countries VALUES ('TN','Túnez');""")
+        cursor.execute("""INSERT INTO countries VALUES ('EG','Egipto');""")
+        cursor.execute("""INSERT INTO countries VALUES ('ZA','Sudáfrica');""")
+        cursor.execute("""INSERT INTO countries VALUES ('NG','Nigeria');""")
+        cursor.execute("""INSERT INTO countries VALUES ('KE','Kenia');""")
+        
+        conn.commit()
