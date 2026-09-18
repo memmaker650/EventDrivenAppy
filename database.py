@@ -454,9 +454,9 @@ def load_accounts():
     conn = get_connection()
 
     cur = conn.execute("""
-        SELECT DISTINCT aggregate_id
-        FROM event_store
-        ORDER BY aggregate_id
+        SELECT account_id
+        FROM accounts
+        ORDER BY account_id asc
     """)
 
     cuentas = [row[0] for row in cur.fetchall()]

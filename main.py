@@ -23,6 +23,8 @@ class EventSourcingApp(toga.App):
     boton_execute = False
     operationSelected = ""
     listaCredHyp = []
+    cuenta = ["", "", "", "", ""]
+    EventosCuenta = [["", "", "", ""]]
     dataCredHyp = ["", "", "", "", "", "", "", ""]
     dataEventosPagosHypCred = []
     
@@ -42,6 +44,24 @@ class EventSourcingApp(toga.App):
         logging.info("Dentro de Account_Changed")
 
         self.account_id = widget.value
+
+    def account_changed_CuentaInfo(self, widget):  
+        logging.info("Dentro de Account_Changed")
+
+        self.account_id = widget.value
+
+        self.tabla_cuenta.data.clear()
+        self.tabla_cuenta.data.append(self.gD.load_accountInfo(widget.value))
+        self.tablaEventos.data.clear()
+        self.eventosCuenta = self.gD.cargaEventosCompletos(widget.value)
+        for evento in self.eventosCuenta:   
+            self.tablaEventos.data.append([
+                evento[0],
+                evento[1],
+                evento[2],
+                evento[3]
+            ]
+             )
 
     def type_op_changed(self, widget):  
         logging.info("Dentro de type_op_Changed")
@@ -347,25 +367,25 @@ class EventSourcingApp(toga.App):
         self.account_selector = "ACC-001"
         self.account_selector = toga.Selection(
             items=[],
-            on_change=self.account_changed
-        )
-        self.account_selector.items = self.gD.load_accounts()
-        print("Default account: ", self.account_selector.value)
-        cuenta = self.gD.load_accountInfo(self.account_selector.value)
-
+            on_change=self.account_changed_CuentaInfo
+        )   
+        cuentas_items = self.gD.load_accounts()
+        cuentas_items.insert(0, "") # Añadi vacío como primer elementos, user selecciona cuenta que ver.
+        self.account_selector.items = cuentas_items
+        
         # Datos de la cuenta
         datos_cuenta = [
             (
-            cuenta[0],
-            cuenta[1],
-            cuenta[4],
-            cuenta[3],
-            cuenta[2],
+            self.cuenta[0],
+            self.cuenta[1],
+            self.cuenta[4],
+            self.cuenta[3],
+            self.cuenta[2],
             )
         ]
 
         # Tabla
-        tabla_cuenta = toga.Table(
+        self.tabla_cuenta = toga.Table(
             columns=[
                 "ID cuenta",
                 "Titular",
@@ -381,8 +401,6 @@ class EventSourcingApp(toga.App):
             style=toga.style.Pack(height=20)
         )
 
-        eventos = self.gD.cargaEventosCompletos(self.account_selector.value)
-
         datos_eventos = [
             (
             evento[0],
@@ -390,10 +408,10 @@ class EventSourcingApp(toga.App):
             evento[2],
             evento[3],
             )
-            for evento in eventos
+            for evento in self.EventosCuenta 
             ]
 
-        tablaEventos = toga.Table(
+        self.tablaEventos = toga.Table(
             columns=[
                 "ID cuenta",
                 "Tipo evento",
@@ -412,9 +430,9 @@ class EventSourcingApp(toga.App):
 
         box.add(titulo)
         box.add(self.account_selector)
-        box.add(tabla_cuenta)
+        box.add(self.tabla_cuenta)
         box.add(self.espacio)
-        box.add(tablaEventos)
+        box.add(self.tablaEventos)
         box.add(self.btn_CheckEvents)
 
         ventana.content = box
