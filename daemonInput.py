@@ -38,6 +38,12 @@ class ProcesadoDatosDemonio():
     destiny = str()
     owner = str()
 
+    def procesar_EventosDB(self, ):
+        loggerinfo(f"Procesar Eventos en DB")
+        print(f"Procesar Eventos en DB")
+
+        
+
     def procesar_fichero(self, ruta):
         print(f"Procesando {ruta}")
         nombre = fichero if isinstance(fichero, str) and fichero.endswith(".json") else os.path.basename(ruta)

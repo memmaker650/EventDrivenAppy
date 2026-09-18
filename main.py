@@ -256,6 +256,13 @@ class EventSourcingApp(toga.App):
             background_color="green",
             on_press=self.ventana_infoHipoteca)
 
+        btn_izquierdo = toga.Button(
+            "Batcg Tratar Eventos",
+            style=Pack(width=200),
+            background_color = "blue"
+            on_press=self.accion_boton_azul
+        )
+
         contenedor_botonhyp = toga.Box(
             children=[
                 toga.Box(style=Pack(flex=1)), # Espacio flexible
@@ -330,7 +337,8 @@ class EventSourcingApp(toga.App):
         # Botón Ejecutar Acción
         self.execute_btn = toga.Button(
             "Ejecutar",
-            on_press=lambda widget: self.gD.ejecutarAccion(widget, self.action_selector.value, self.account_selector.value, self.amount_input.value, self.transfer_account_selector.value, None, self.shop_input.value, self.interest_rate.value, self.yearsReturn.value)
+            on_press=lambda widget: self.gD.ejecutarAccion(widget, self.action_selector.value, self.account_selector.value, self.amount_input.value, self.transfer_account_selector.value, None, self.shop_input.value, self.interest_rate.value, self.yearsReturn.value),
+            style=Pack(margin=10)
         )
 
         # Ocultos inicialmente
