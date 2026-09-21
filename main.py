@@ -4,6 +4,7 @@ import toga
 from toga.style import Pack
 from toga.style.pack import COLUMN, ROW
 from toga.colors import RED, BLUE, GREEN, ORANGE, YELLOW
+from toga.icons import Icon
 import logging
 from pathlib import Path
 from datetime import datetime
@@ -601,8 +602,10 @@ def main():
         )
 
     app = EventSourcingApp(
-        "Event Based ApPy",
-        "com.SkullWithGasMask.EventBasedBank")
+        formal_name="Event Based ApPy",
+        app_id="com.SkullWithGasMask.EventBasedBank",
+        icon=Icon("resources/Eggnank_icon")
+    )
 
     print("Lanzando app...")
     app.main_loop()    
