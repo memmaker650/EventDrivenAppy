@@ -27,6 +27,7 @@ def init_db():
     logger.info("init_DB")
     create_eventsTable()
     create_AccountTable()
+    create_AccountTable_Histo()
     create_Account_states()
     crear_tablaDatos_Nacionalidad()
     create_hipotecasTable()
@@ -86,12 +87,12 @@ def create_AccountTable():
         family_name TEXT NOT NULL,
         id_doc TEXT NOT NULL,
         email TEXT NOT NULL,
-        address TEXT NOT NULL,
-        city TEXT NOT NULL,
-        nationality TEXT NOT NULL,
+        address TEXT,
+        city TEXT,
+        nationality TEXT,
         created_at DATE DEFAULT (datetime('now')),
-        state TEXT NOT NULL,
-        money REAL NOT NULL DEFAULT 0.0
+        state TEXT ,
+        money REAL DEFAULT 0.0
     )
     """)
 
@@ -101,7 +102,7 @@ def create_AccountTable():
 def create_AccountTable_Histo():
     conn = get_connection()
 
-    conn.execute(""" DROP TABLE accounts_histo """)
+    #conn.execute(""" DROP TABLE accounts_histo """)
 
     conn.execute("""
     CREATE TABLE IF NOT EXISTS accounts_histo(
@@ -176,11 +177,12 @@ def load_accountInfo(cuenta):
     return datos
 
 # Método para crear cuenta en la tabla ACCOUTS
-def crearCuenta(accid, owner, family, dni, email, address, city, nation):
+def crearCuenta(accid, owner, family="", dni="", email="", address="", city="", nation=""):
+    logger.info("SQLite3 Creando cuenta.")
     try:
         conn = get_connection()
 
-        fechaActual = datetime.now().isoformat()
+        fechaActual = datetime.now().isoformat(timespec='seconds')
 
         conn.execute(
             """
@@ -197,18 +199,18 @@ def crearCuenta(accid, owner, family, dni, email, address, city, nation):
             state,
             money
             )
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 accid,
                 owner,
-                family,
-                dni, 
-                email,
-                address,
-                city,
-                nation,
-                fechaActual, 
+                family or "",
+                dni or "",
+                email or "",
+                address or "",
+                city or "",
+                nation or "",
+                fechaActual,
                 "open",
                 0.0,
             ),
@@ -218,6 +220,7 @@ def crearCuenta(accid, owner, family, dni, email, address, city, nation):
         return True
     except sqlite3.Error as e:
         print(f"Error al insertar: {e}")
+        logger.error(f"Error al insertar: {e}")
         return False
     finally:
         conn.close()

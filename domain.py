@@ -22,7 +22,6 @@ class BankAccount:
         elif event_type == "CardPayment":
             self.balance -= int(data["amount"])    
 
-
 def load_account(account_id):
     account = BankAccount()
 
@@ -42,6 +41,8 @@ def handle_create_account(command):
         {
             "account_id": command.account_id,
             "owner": command.owner,
+            "family_name": command.family_name,
+            "doc_id": command.doc_id,
             "state":"open"
         }
     )

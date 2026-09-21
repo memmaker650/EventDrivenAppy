@@ -50,18 +50,14 @@ class EventSourcingApp(toga.App):
 
         self.account_id = widget.value
 
-        self.tabla_cuenta.data.clear()
-        self.tabla_cuenta.data.append(self.gD.load_accountInfo(widget.value))
-        self.tablaEventos.data.clear()
-        self.eventosCuenta = self.gD.cargaEventosCompletos(widget.value)
-        for evento in self.eventosCuenta:   
-            self.tablaEventos.data.append([
-                evento[0],
-                evento[1],
-                evento[2],
-                evento[3]
-            ]
-             )
+        info = self.gD.load_accountInfo(widget.value)
+        self.tabla_cuenta.data = [tuple(info)] if info else []
+
+        self.eventosCuenta = self.gD.cargaEventosCompletos(widget.value) or []
+        self.tablaEventos.data = [
+            (evento[0], evento[1], evento[2], evento[3])
+            for evento in self.eventosCuenta
+        ]
 
     def type_op_changed(self, widget):  
         logging.info("Dentro de type_op_Changed")

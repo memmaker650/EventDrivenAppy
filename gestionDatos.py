@@ -50,40 +50,54 @@ class gestionDatos():
         except EmailNotValidError as e:
             return False, str(e)
 
-    def create_account(self, widget, id_input, ow_input, family, idcardnumber, email, address, city, nationality):
+    def create_account(self, widget, id_input, ow_input, family=None, idcardnumber=None, email=None, address=None, city=None, nationality=None, desde_eventos=False):
         logging.info("Dentro de create_account.")
 
-        campos = {
-            "NOMBRE": ow_input,
-            "APELLIDOS": family,
-            "DNI": idcardnumber,
-            "DIRECCIÓN": address,
-            "CIUDAD": city,
-            "NACIONALIDAD": nationality
-            }
+        if not desde_eventos:
+            campos = {
+                "NOMBRE": ow_input,
+                "APELLIDOS": family,
+                "DNI": idcardnumber,
+                "DIRECCIÓN": address,
+                "CIUDAD": city,
+                "NACIONALIDAD": nationality
+                }
 
-        for nombre, valor in campos.items():
-            if valor is None or valor == "":
-                self._actualizar_estado(f"Error!!! Cuenta NO creada, {nombre} NO rellenado.", "Error")
-                return False
-        
-        # self.account_id = id_input.value   
-        
-        if self.boton_execution:
+            for nombre, valor in campos.items():
+                if valor is None or valor == "":
+                    self._actualizar_estado(f"Error!!! Cuenta NO creada, {nombre} NO rellenado.", "Error")
+                    return False
+        elif not ow_input:
+            self._actualizar_estado("Error!!! Cuenta NO creada, NOMBRE NO rellenado.", "Error")
+            return False
+
+        if self.boton_execution and not desde_eventos:
             cmd = commands.CreateAccount(
                 id_input,
-                ow_input + " " + family
+                ow_input,
+                family or "",
+                idcardnumber or "",
             )
+            domain.handle_create_account(cmd)
 
-            resul = domain.handle_create_account(cmd)
-
-            # self.account_selector.items = database.load_accounts()
-        flag = database.crearCuenta(id_input, ow_input, family, idcardnumber, email, address, city, nationality)
+        flag = database.crearCuenta(
+            id_input,
+            ow_input,
+            family or "",
+            idcardnumber or "",
+            email or "",
+            address or "",
+            city or "",
+            nationality or "",
+        )
 
         if flag:
-            self._actualizar_estado("Cuenta creada", "OK") 
+            self._actualizar_estado("Cuenta creada", "OK")
+            logger.info("Cuenta creada")
         else:
-            self._actualizar_estado("ERROR ! Cuenta NO CREADA", "Error")  
+            self._actualizar_estado("ERROR ! Cuenta NO CREADA", "Error")
+            logger.error("ERROR ! Cuenta NO CREADA")
+        return flag
 
     def create_account_block(self, id_input, ow_input):
         logging.info("Dentro de create_account_block.")
@@ -113,7 +127,7 @@ class gestionDatos():
         else:
             self._actualizar_estado("ERROR ! Cuenta NO CREADA", "Error")   
 
-    def ejecutarAccion(self, widget, accion, origen, cantidad, destino=None, propietario=None, tienda=None, rate=None, dateFin=None):
+    def ejecutarAccion(self, widget, accion, origen, cantidad, destino=None, tienda=None, propietario=None, apellidos=None, doc_id=None, email=None, address=None, city=None, nationality=None, mortgage_id = None, credit_id = None, return_period = None, rate=None, dateInicio=None):
         logging.info("into de ejecutarAccion.")
         print("into de ejecutarAccion.")
         # print("into de ejecutarAccion.")
@@ -127,14 +141,24 @@ class gestionDatos():
 
         # self.account_id = self.account_selector.value
 
-        if accion == "crear":
+        if accion == "crear" or accion == "AccountCreated":
             if propietario == "":
-                # Cambiarolo xq no podemos lanzar esto directamente a la GUI así
-                self.label_info.text("Introducir Nombre Titular.")
+                self._actualizar_estado("Introducir Nombre Titular.", "Error")
             else:
-                self.create_account(None, origen, propietario)
+                self.create_account(
+                    None,
+                    origen,
+                    propietario,
+                    apellidos,
+                    doc_id,
+                    email,
+                    address,
+                    city,
+                    nationality,
+                    desde_eventos=(accion == "AccountCreated"),
+                )
 
-        elif accion == "depositar":
+        elif accion == "depositar" or accion == "MoneyDeposited":
             print("Jump-2_handle_deposit")
             cmd = commands.DepositMoney(
                 origen,
@@ -142,7 +166,7 @@ class gestionDatos():
             )
 
             domain.handle_deposit(cmd)
-        elif accion == "retirar":
+        elif accion == "retirar" or accion == "Moneywithdraw":
             print("Jump-2_handle_withdraw")
             cmd = commands.MoneyWithDraw(
                 origen,
@@ -151,7 +175,7 @@ class gestionDatos():
 
             domain.handle_withdraw(cmd)
 
-        elif accion == "pedir_hipoteca":
+        elif accion == "pedir_hipoteca" or accion == "demandMortgage":
             print("Jump-2_handle_DemandMortgage")
 
             hyp_id = database.generar_id_hypoteka()
@@ -161,18 +185,18 @@ class gestionDatos():
                 hyp_id,
                 rate,
                 cantidad,
-                dateFin,
-                datetime.now().isoformat(timespec='seconds')
+                return_period,
+                dateInicio if dateInicio is not None else datetime.now().isoformat(timespec='seconds')
             )
 
-            fecha_futura = datetime.now() + relativedelta(years=int(dateFin))
+            fecha_futura = datetime.now() + relativedelta(years=int(return_period))
             if origen == None: 
                 self._actualizar_estado("No hay cuenta asociada", "Error")
             else:
                 domain.handle_demandMortgage(cmd)
                 self.manager.crear_hipoteca(origen, cantidad, rate, datetime.now(), fecha_futura) 
         
-        elif accion == "pago_hipoteca":
+        elif accion == "pago_hipoteca" or accion == "demandMortgage":
             print("Jump-2_handle_MortgagePayment")
 
             hyp_id = database.buscar_hypoteka_asociadaCuenta(origen)
@@ -181,12 +205,12 @@ class gestionDatos():
             cmd = commands.MortgagePayment(
                 hyp_id[0],
                 cantidad,
-                datetime.now().isoformat(timespec='seconds')
+                dateInicio if dateInicio is not None else datetime.now().isoformat(timespec='seconds')
             )
 
             domain.handle_mortgagePayment(cmd)
 
-        elif accion == "pedir_crédito":
+        elif accion == "pedir_crédito" or accion == "demandCredit":
             print("Jump-2_handle_DemandCredit")
 
             credit_id = database.generar_id_credito()
@@ -196,18 +220,18 @@ class gestionDatos():
                 credit_id,
                 rate,
                 cantidad,
-                dateFin,
-                datetime.now().isoformat(timespec='seconds')
+                return_period,
+                dateInicio if dateInicio is not None else datetime.now().isoformat(timespec='seconds')
             )
             
-            fecha_futura = datetime.now() + relativedelta(years=int(dateFin))
+            fecha_futura = datetime.now() + relativedelta(years=int(return_period))
             if origen == None: 
                 self._actualizar_estado("No hay cuenta asociada", "Error")
             else:
                 domain.handle_demandCredit(cmd)
                 self.manager.crear_hipoteca(origen, cantidad, rate, datetime.now(), fecha_futura, 1)  # 1 porque es un crédito. 
             
-        elif accion == "pago_crédito":
+        elif accion == "pago_crédito" or accion == "CreditPayment":
             print("Jump-2_handle_CreditPayment")
 
             credit_id = database.buscar_credito_asociadaCuenta(origen)
@@ -217,12 +241,12 @@ class gestionDatos():
                 cmd = commands.CreditPayment(
                     credit_id[0],
                     cantidad,
-                    datetime.now().isoformat(timespec='seconds')
+                    dateInicio if dateInicio is not None else datetime.now().isoformat(timespec='seconds')
                 )
 
                 domain.handle_CreditPayment(cmd)
 
-        elif accion == "transferencia":
+        elif accion == "transferencia" or accion == "MoneyTransfer":
             print("Jump-2_handle_MoneyTransfer")
             cmd = commands.TransferMoney(
                 origen,
@@ -232,7 +256,7 @@ class gestionDatos():
 
             domain.handle_moneyTransfer(cmd)    
 
-        elif accion == "pago_tarjeta":
+        elif accion == "pago_tarjeta" or accion == "CardPayment":
             print("Jump-2_handle_CardPayment")
             cmd = commands.CardPayment(
                 origen,
@@ -242,7 +266,7 @@ class gestionDatos():
 
             domain.handle_CardPayment(cmd)    
 
-        elif accion == "cerrar":
+        elif accion == "cerrar" or accion == "CloseAccount":
             cmd = commands.CloseAccount(
                 origen
             )
@@ -346,7 +370,7 @@ class gestionDatos():
 
     # Método para lanzar Batch tratamiento Eventos y actualizar DB si necesario.
     #--------------------------------------------------------------------------------------
-    def lanzar_BatchTratarEventos(self):
+    def lanzar_BatchTratarEventos(self, widget):
         logger.info("Dentro Batch Tratar Eventos Update DB")
 
         PdD = daemonInput.ProcesadoDatosDemonio()

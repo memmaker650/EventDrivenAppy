@@ -94,3 +94,10 @@ La carpeta tests queda así:
 * test_db.py: métodos de database.py (cuentas, eventos, hipotecas, IDs).
 * test_event.py: commands.py, domain.py y events.py.
 * test_json.py: daemonInput.py (parseo JSON, handler y movimiento de ficheros).
+
+
+*** SQLite3
+---------------
+
+INSERT OR IGNORE INTO usuarios (nombre, email)
+VALUES ('Pepe', 'jorge@correo.com');

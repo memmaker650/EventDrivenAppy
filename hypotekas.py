@@ -14,9 +14,6 @@ class HipotecaManager:
     def meses_entre_fechas(self, fecha_inicio, fecha_fin):
         logger.info("Método cálculo entre fechas.")
 
-        #fecha_inicio = datetime.strptime(inicio, "%Y-%m-%d")
-        #fecha_fin = datetime.strptime(fin, "%Y-%m-%d")
-
         return (
             (fecha_fin.year - fecha_inicio.year) * 12
             + fecha_fin.month

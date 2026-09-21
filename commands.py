@@ -4,13 +4,15 @@ logger = logging.getLogger(__name__)
 
 class CreateAccount:
     logger.info("CreateAccount class")
-    def __init__(self, account_id, owner):
+    def __init__(self, account_id, owner, family_name="", doc_id=""):
         self.account_id = account_id
         self.owner = owner
+        self.family_name = family_name
+        self.doc_id = doc_id
         self.state = "open"
 
 class DepositMoney:
-    def __init__(self, account_id, amount):
+    def __init__(self, account_id, amount, ):
         self.account_id = account_id
         self.amount = amount
 
