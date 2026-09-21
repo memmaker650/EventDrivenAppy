@@ -98,6 +98,52 @@ def create_AccountTable():
     conn.commit()
     conn.close() 
 
+def create_AccountTable_Histo():
+    conn = get_connection()
+
+    conn.execute(""" DROP TABLE accounts_histo """)
+
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS accounts_histo(
+        id INTEGER,
+        account_id TEXT,
+        name TEXT,
+        family_name TEXT,
+        id_doc TEXT,
+        email TEXT,
+        address TEXT,
+        city TEXT,
+        nationality TEXT,
+        created_at DATE,
+        state TEXT,
+        money REAL,
+        fecha_historizado TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
+def traspasoDatos_Accounts2Histo(): 
+    conn = get_connection()
+
+    try: 
+        conn.execute("""
+            INSERT INTO accounts_histo (id, account_id, name, family_name, id_doc, email, address, city, nationality, created_at, state, money)
+                SELECT id, account_id, name, family_name, id_doc, email, address, city, nationality, created_at, state, money FROM accounts;
+        """)
+
+        conn.execute("""
+            DELETE FROM accounts;
+            """)
+
+        conn.commit()
+        return True
+    except:
+        return False
+    finally:
+        conn.close()
+
 def _as_id(cuenta):
     if isinstance(cuenta, (tuple, list)):
         return cuenta[0]
@@ -130,7 +176,7 @@ def load_accountInfo(cuenta):
     return datos
 
 # Método para crear cuenta en la tabla ACCOUTS
-def crearCuenta(accid, owner):
+def crearCuenta(accid, owner, family, dni, email, address, city, nation):
     try:
         conn = get_connection()
 
@@ -141,6 +187,12 @@ def crearCuenta(accid, owner):
             INSERT INTO accounts(
             account_id,
             name,
+            family_name,
+            id_doc,
+            email,
+            address,
+            city,
+            nationality,
             created_at,
             state,
             money
@@ -150,6 +202,12 @@ def crearCuenta(accid, owner):
             (
                 accid,
                 owner,
+                family,
+                dni, 
+                email,
+                address,
+                city,
+                nation,
                 fechaActual, 
                 "open",
                 0.0,
@@ -337,7 +395,7 @@ def load_events(aggregate_id):
         SELECT event_type, event_data
         FROM event_store
         WHERE aggregate_id = ?
-        ORDER BY id
+        ORDER BY id ASC
         """,
         (aggregate_id,),
     )

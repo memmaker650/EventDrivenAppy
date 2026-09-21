@@ -18,6 +18,11 @@ GUI
 - Screen to see actual state and events of an specific account.
 
 
+*** Dependencias (librerías)
+-----------------------------
+python3.14 -m pip install email-validator
+python3.14 -m pip install python-dateutil
+
 **  Ejemplo uso de Hipoteca : 
 -------------------------------
 1.- Crear una hipoteca

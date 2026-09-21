@@ -2,7 +2,6 @@ import time
 import shutil
 import os
 import json
-import sqlite3
 from datetime import datetime
 
 from watchdog.observers import Observer
@@ -39,9 +38,41 @@ class ProcesadoDatosDemonio():
     owner = str()
 
     def procesar_EventosDB(self, ):
-        loggerinfo(f"Procesar Eventos en DB")
+        logger.info(f"Procesar Eventos en DB")
         print(f"Procesar Eventos en DB")
 
+        num_eventos_tratados = 0
+
+        # Buscar en DB el ID máximo de cuentas
+        maxID = database.loadMaxAccountID()
+
+        # Recorrer una a una las cuentas y hacer las operaciones
+        # Ordenar los eventos por orden de id
+        database.create_AccountTable_Histo()
+        flag = database.traspasoDatos_Accounts2Histo()
+        if flag:
+            logger.info("Trasvase Datos Accounts OK!")
+            print("Trasvase Datos Accounts OK!")
+        else:
+            print("ERROR !!! Trasvase Datos Accounts ERROR !!!")
+            exit()
+
+        # Bucle principal
+        for i in range(maxID+1):
+            cuenta = f"ACC-{i+1:03d}"
+            datos = database.load_events(cuenta)
+
+            for evento in datos:
+                print(evento)
+                i+=1
+                self.procesar_json(evento)
+                gDd = gestionDatos.gestionDatos()
+                gDd.ejecutarAccion(None, self.event_type, self.aggregate_id, self.amount, self.destiny, self.owner)
+
+        # Crear de forma paralela una barra de progreso para poder ver el progreso general del tratamiento.
+
+
+        print(f"Total Eventos tratados : {num_eventos_tratados}")
         
 
     def procesar_fichero(self, ruta):

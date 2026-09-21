@@ -2,6 +2,7 @@ import os
 import logging
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+from email_validator import validate_email, EmailNotValidError
 
 import database
 import commands 
@@ -42,7 +43,14 @@ class gestionDatos():
     def traer_listaNacionalidades(self):
         return database.traer_listaNacionalidades()
 
-    def create_account(self, widget, id_input, ow_input, family, idcardnumber, address, city, nationality):
+    def validar_email(email: str) -> tuple[bool, str]:
+        try:
+            info = validate_email(email, check_deliverability=False)
+            return True, info.normalized
+        except EmailNotValidError as e:
+            return False, str(e)
+
+    def create_account(self, widget, id_input, ow_input, family, idcardnumber, email, address, city, nationality):
         logging.info("Dentro de create_account.")
 
         campos = {
@@ -58,24 +66,19 @@ class gestionDatos():
             if valor is None or valor == "":
                 self._actualizar_estado(f"Error!!! Cuenta NO creada, {nombre} NO rellenado.", "Error")
                 return False
-
-        if not owner:
-            self.label_info.text = "Debe indicar un nombre"
-            print("Debe indicar un nombre")
-            return
         
         # self.account_id = id_input.value   
         
         if self.boton_execution:
             cmd = commands.CreateAccount(
                 id_input,
-                owner
+                ow_input + " " + family
             )
 
             resul = domain.handle_create_account(cmd)
 
             # self.account_selector.items = database.load_accounts()
-        flag = database.crearCuenta(id_input, owner)
+        flag = database.crearCuenta(id_input, ow_input, family, idcardnumber, email, address, city, nationality)
 
         if flag:
             self._actualizar_estado("Cuenta creada", "OK") 
@@ -340,3 +343,13 @@ class gestionDatos():
         
         print("resultArray:", resultArray)
         return resultArray
+
+    # Método para lanzar Batch tratamiento Eventos y actualizar DB si necesario.
+    #--------------------------------------------------------------------------------------
+    def lanzar_BatchTratarEventos(self):
+        logger.info("Dentro Batch Tratar Eventos Update DB")
+
+        PdD = daemonInput.ProcesadoDatosDemonio()
+        PdD.procesar_EventosDB()
+
+        return True

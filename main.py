@@ -216,6 +216,11 @@ class EventSourcingApp(toga.App):
             style=Pack(margin=10)
         )
 
+        self.email_input = toga.TextInput(
+            placeholder="e-mail",
+            style=Pack(margin=10)
+        )
+
         address_box = toga.Box(style=Pack(direction=ROW, margin=10))
 
         self.address_input = toga.TextInput(
@@ -259,13 +264,14 @@ class EventSourcingApp(toga.App):
         btn_izquierdo = toga.Button(
             "Batcg Tratar Eventos",
             style=Pack(width=200),
-            background_color = "blue"
-            on_press=self.accion_boton_azul
+            background_color = "blue",
+            on_press=self.gD.lanzar_BatchTratarEventos
         )
 
         contenedor_botonhyp = toga.Box(
             children=[
-                toga.Box(style=Pack(flex=1)), # Espacio flexible
+                btn_izquierdo,
+                toga.Box(style=Pack(flex=1)),
                 btn_hypotekas
                 ],
             style=Pack(direction=ROW, margin=10),
@@ -366,6 +372,7 @@ class EventSourcingApp(toga.App):
                 self.Titulo2,
                 name_box,
                 self.doc_id_input,
+                self.email_input, 
                 address_box,
                 self.nationality_selection,
                 create_btn,
