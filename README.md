@@ -101,3 +101,16 @@ La carpeta tests queda así:
 
 INSERT OR IGNORE INTO usuarios (nombre, email)
 VALUES ('Pepe', 'jorge@correo.com');
+
+*** Briefcase :
+--------------------
+Crear el proyecto --> briefcase create windows
+
+Cambios con dependencias nuevas :
+    1.- briefcase update windows
+
+    2.- briefcase build windows
+
+    3.- briefcase run windows
+
+Generar paquete windows --> briefcase package windows

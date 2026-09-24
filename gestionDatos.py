@@ -108,8 +108,8 @@ class gestionDatos():
             if ow_input is not None:
                 owner = ow_input.value
             else:
-                self.label_info.text = "Error Crear Cuenta, dueño no rellenado." 
-                return
+                owner = "Desconocido"
+
         print("Owner: ", owner)
         print("ACC-id: ", id_input)
 

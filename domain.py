@@ -14,7 +14,6 @@ class BankAccount:
 
         if event_type == "AccountCreated":
             self.owner = data["owner"]
-
         elif event_type == "MoneyDeposited":
             self.balance += int(data["amount"])
         elif event_type == "Moneywithdraw":
@@ -35,6 +34,7 @@ def load_account(account_id):
 def handle_create_account(command):
     print("Handle_create_account")
     logger.info("Hadle_create_account")
+
     resultado = save_event(
         command.account_id,
         "AccountCreated",

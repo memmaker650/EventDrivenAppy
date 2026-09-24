@@ -96,6 +96,9 @@ class ProcesadoDatosDemonio():
                         self.nationality,
                         desde_eventos=True,
                     )
+                else:
+                    gDd.ejecutarAccion(None, self.event_type, self.aggregate_id, self.amount, self.destiny, self.shop, self.owner, self.family_name, self.doc_id, self.email, self.address, self.city, self.nationality, self.mortgage_id, self.credit_id, self.return_period, self.interest_rate, self.initial_date)
+
 
         gDd.calculoEventosACuenta(None)
 

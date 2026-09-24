@@ -1,26 +1,414 @@
 [
     {
-        "aggregate_id": "ACC-005",
-        "event_type": "Moneywithdraw",
-        "event_data": {
-            "account": "ACC-005",
-            "amount": 365
-            }
-    },
-    {
-        "aggregate_id": "ACC-025",
+        "aggregate_id": "ACC-001",
         "event_type": "AccountCreated",
         "event_data": {
-            "account": "ACC-025",
-            "owner": "Samuel"
-            }
+            "account_id": "ACC-001",
+            "owner": "Jorge"
+        }
     },
+    {
+        "aggregate_id": "ACC-002",
+        "event_type": "AccountCreated",
+        "event_data": {
+            "account_id": "ACC-002",
+            "owner": "Ana"
+        }
+    },
+    {
+        "aggregate_id": "ACC-003",
+        "event_type": "AccountCreated",
+        "event_data": {
+            "account_id": "ACC-003",
+            "owner": "Pedro"
+        }
+    },
+    {
+        "aggregate_id": "ACC-004",
+        "event_type": "AccountCreated",
+        "event_data": {
+            "account_id": "ACC-004",
+            "owner": "Laura"
+        }
+    },
+    {
+        "aggregate_id": "ACC-005",
+        "event_type": "AccountCreated",
+        "event_data": {
+            "account_id": "ACC-005",
+            "owner": "Samuel"
+        }
+    },
+    {
+        "aggregate_id": "ACC-006",
+        "event_type": "AccountCreated",
+        "event_data": {
+            "account_id": "ACC-006",
+            "owner": "Marta"
+        }
+    },
+    {
+        "aggregate_id": "ACC-007",
+        "event_type": "AccountCreated",
+        "event_data": {
+            "account_id": "ACC-007",
+            "owner": "Carlos"
+        }
+    },
+    {
+        "aggregate_id": "ACC-008",
+        "event_type": "AccountCreated",
+        "event_data": {
+            "account_id": "ACC-008",
+            "owner": "Lucia"
+        }
+    },
+    {
+        "aggregate_id": "ACC-009",
+        "event_type": "AccountCreated",
+        "event_data": {
+            "account_id": "ACC-009",
+            "owner": "Miguel"
+        }
+    },
+    {
+        "aggregate_id": "ACC-010",
+        "event_type": "AccountCreated",
+        "event_data": {
+            "account_id": "ACC-010",
+            "owner": "Elena"
+        }
+    },
+
     {
         "aggregate_id": "ACC-001",
         "event_type": "MoneyDeposited",
         "event_data": {
-            "account": "ACC-001",
-            "amount": 130
-            }
+            "amount": 2500
+        }
+    },
+    {
+        "aggregate_id": "ACC-002",
+        "event_type": "MoneyDeposited",
+        "event_data": {
+            "amount": 1800
+        }
+    },
+    {
+        "aggregate_id": "ACC-003",
+        "event_type": "MoneyDeposited",
+        "event_data": {
+            "amount": 3200
+        }
+    },
+    {
+        "aggregate_id": "ACC-004",
+        "event_type": "MoneyDeposited",
+        "event_data": {
+            "amount": 900
+        }
+    },
+    {
+        "aggregate_id": "ACC-005",
+        "event_type": "MoneyDeposited",
+        "event_data": {
+            "amount": 1400
+        }
+    },
+    {
+        "aggregate_id": "ACC-006",
+        "event_type": "MoneyDeposited",
+        "event_data": {
+            "amount": 2750
+        }
+    },
+
+    {
+        "aggregate_id": "ACC-001",
+        "event_type": "MoneyWithDraw",
+        "event_data": {
+            "amount": 150
+        }
+    },
+    {
+        "aggregate_id": "ACC-002",
+        "event_type": "MoneyWithDraw",
+        "event_data": {
+            "amount": 75
+        }
+    },
+    {
+        "aggregate_id": "ACC-003",
+        "event_type": "MoneyWithDraw",
+        "event_data": {
+            "amount": 240
+        }
+    },
+    {
+        "aggregate_id": "ACC-004",
+        "event_type": "MoneyWithDraw",
+        "event_data": {
+            "amount": 60
+        }
+    },
+    {
+        "aggregate_id": "ACC-005",
+        "event_type": "MoneyWithDraw",
+        "event_data": {
+            "amount": 110
+        }
+    },
+    {
+        "aggregate_id": "ACC-006",
+        "event_type": "MoneyWithDraw",
+        "event_data": {
+            "amount": 90
+        }
+    },
+
+    {
+        "aggregate_id": "ACC-001",
+        "event_type": "PaymentCard",
+        "event_data": {
+            "amount": 45,
+            "shop": "Amazon"
+        }
+    },
+    {
+        "aggregate_id": "ACC-002",
+        "event_type": "PaymentCard",
+        "event_data": {
+            "amount": 120,
+            "shop": "Carrefour"
+        }
+    },
+    {
+        "aggregate_id": "ACC-003",
+        "event_type": "PaymentCard",
+        "event_data": {
+            "amount": 32,
+            "shop": "Spotify"
+        }
+    },
+    {
+        "aggregate_id": "ACC-004",
+        "event_type": "PaymentCard",
+        "event_data": {
+            "amount": 88,
+            "shop": "MediaMarkt"
+        }
+    },
+    {
+        "aggregate_id": "ACC-005",
+        "event_type": "PaymentCard",
+        "event_data": {
+            "amount": 57,
+            "shop": "Zara"
+        }
+    },
+    {
+        "aggregate_id": "ACC-006",
+        "event_type": "PaymentCard",
+        "event_data": {
+            "amount": 210,
+            "shop": "Ikea"
+        }
+    },
+
+    {
+        "aggregate_id": "ACC-001",
+        "event_type": "MoneyTransfer",
+        "event_data": {
+            "amount": 300,
+            "destiny": "ACC-002"
+        }
+    },
+    {
+        "aggregate_id": "ACC-003",
+        "event_type": "MoneyTransfer",
+        "event_data": {
+            "amount": 500,
+            "destiny": "ACC-004"
+        }
+    },
+    {
+        "aggregate_id": "ACC-005",
+        "event_type": "MoneyTransfer",
+        "event_data": {
+            "amount": 250,
+            "destiny": "ACC-006"
+        }
+    },
+    {
+        "aggregate_id": "ACC-007",
+        "event_type": "MoneyTransfer",
+        "event_data": {
+            "amount": 100,
+            "destiny": "ACC-008"
+        }
+    },
+    {
+        "aggregate_id": "ACC-009",
+        "event_type": "MoneyTransfer",
+        "event_data": {
+            "amount": 425,
+            "destiny": "ACC-010"
+        }
+    },
+
+    {
+        "aggregate_id": "ACC-003",
+        "event_type": "DemandMortgage",
+        "event_data": {
+            "account_id": "ACC-003",
+            "rate": 2.7,
+            "amount": 180000,
+            "period": 360,
+            "dateInit": "2026-01-15"
+        }
+    },
+    {
+        "aggregate_id": "ACC-004",
+        "event_type": "DemandMortgage",
+        "event_data": {
+            "account_id": "ACC-004",
+            "rate": 3.1,
+            "amount": 220000,
+            "period": 300,
+            "dateInit": "2026-02-01"
+        }
+    },
+    {
+        "aggregate_id": "ACC-005",
+        "event_type": "DemandCredit",
+        "event_data": {
+            "account_id": "ACC-005",
+            "rate": 6.5,
+            "amount": 10000,
+            "period": 48,
+            "dateInit": "2026-03-01"
+        }
+    },
+    {
+        "aggregate_id": "ACC-006",
+        "event_type": "DemandCredit",
+        "event_data": {
+            "account_id": "ACC-006",
+            "rate": 7.2,
+            "amount": 7000,
+            "period": 36,
+            "dateInit": "2026-04-10"
+        }
+    },
+    {
+        "aggregate_id": "ACC-007",
+        "event_type": "DemandCredit",
+        "event_data": {
+            "account_id": "ACC-007",
+            "rate": 5.9,
+            "amount": 15000,
+            "period": 60,
+            "dateInit": "2026-05-05"
+        }
+    },
+
+    {
+        "aggregate_id": "ACC-003",
+        "event_type": "MortgagePayment",
+        "event_data": {
+            "account_id": "ACC-003",
+            "amount": 850,
+            "pdate": "2026-06-05"
+        }
+    },
+    {
+        "aggregate_id": "ACC-004",
+        "event_type": "MortgagePayment",
+        "event_data": {
+            "account_id": "ACC-004",
+            "amount": 975,
+            "pdate": "2026-06-05"
+        }
+    },
+
+    {
+        "aggregate_id": "ACC-005",
+        "event_type": "CreditPayment",
+        "event_data": {
+            "account_id": "ACC-005",
+            "amount": 245,
+            "pdate": "2026-06-05"
+        }
+    },
+    {
+        "aggregate_id": "ACC-006",
+        "event_type": "CreditPayment",
+        "event_data": {
+            "account_id": "ACC-006",
+            "amount": 230,
+            "pdate": "2026-06-05"
+        }
+    },
+    {
+        "aggregate_id": "ACC-007",
+        "event_type": "CreditPayment",
+        "event_data": {
+            "account_id": "ACC-007",
+            "amount": 305,
+            "pdate": "2026-06-05"
+        }
+    },
+
+    {
+        "aggregate_id": "ACC-003",
+        "event_type": "AmortisationPayment",
+        "event_data": {
+            "account_id": "ACC-003",
+            "amount": 5000,
+            "pdate": "2026-07-01"
+        }
+    },
+    {
+        "aggregate_id": "ACC-004",
+        "event_type": "AmortisationPayment",
+        "event_data": {
+            "account_id": "ACC-004",
+            "amount": 3000,
+            "pdate": "2026-07-01"
+        }
+    },
+
+    {
+        "aggregate_id": "ACC-008",
+        "event_type": "Overdraft",
+        "event_data": {
+            "account_id": "ACC-008",
+            "amount": -150
+        }
+    },
+    {
+        "aggregate_id": "ACC-009",
+        "event_type": "Overdraft",
+        "event_data": {
+            "account_id": "ACC-009",
+            "amount": -90
+        }
+    },
+
+    {
+        "aggregate_id": "ACC-002",
+        "event_type": "AccountClosed",
+        "event_data": {
+            "account_id": "ACC-002",
+            "owner": "Ana"
+        }
+    },
+    {
+        "aggregate_id": "ACC-010",
+        "event_type": "AccountClosed",
+        "event_data": {
+            "account_id": "ACC-010",
+            "owner": "Elena"
+        }
     }
 ]

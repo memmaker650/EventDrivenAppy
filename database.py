@@ -31,6 +31,7 @@ def init_db():
     create_Account_states()
     crear_tablaDatos_Nacionalidad()
     create_hipotecasTable()
+    create_hipotecasTable_Histo()
     create_amortizaciones_anticipadasTable()
     comprobar_FK_activas()
 
@@ -135,7 +136,16 @@ def traspasoDatos_Accounts2Histo():
         """)
 
         conn.execute("""
+            INSERT INTO hipotecas_histo (id, cuenta_asociada, hipoteca_id, capital_inicial, tasa_anual, fecha_inicio, fecha_fin, cuota_mensual, meses_totales, meses_restantes, saldo_actual, es_Credito)
+                SELECT id, cuenta_asociada, hipoteca_id, capital_inicial, tasa_anual, fecha_inicio, fecha_fin, cuota_mensual, meses_totales, meses_restantes, saldo_actual, es_Credito FROM hipotecas;
+        """)    
+
+        conn.execute("""
             DELETE FROM accounts;
+            """)
+
+        conn.execute("""
+            DELETE FROM hipotecas;
             """)
 
         conn.commit()
@@ -655,6 +665,30 @@ def create_hipotecasTable():
         saldo_actual REAL NOT NULL,
         es_Credito BOOLEAN NOT NULL default 0,
         FOREIGN KEY (cuenta_asociada) REFERENCES accounts(account_id)
+    )""")
+
+    conn.commit()
+    conn.close()
+
+def create_hipotecasTable_Histo():
+    logger.info("Creando Tabla Hipotecas")
+
+    conn = get_connection()
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS hipotecas_histo (
+        id INTEGER,
+        cuenta_asociada TEXT,
+        hipoteca_id TEXT,
+        capital_inicial REAL,
+        tasa_anual REAL,
+        fecha_inicio TEXT,
+        fecha_fin TEXT,
+        cuota_mensual REAL,
+        meses_totales INTEGER,
+        meses_restantes INTEGER,
+        saldo_actual REAL,
+        es_Credito BOOLEAN
     )""")
 
     conn.commit()
