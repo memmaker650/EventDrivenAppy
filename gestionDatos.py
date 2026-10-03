@@ -53,11 +53,16 @@ class gestionDatos():
     def create_account(self, widget, id_input, ow_input, family=None, idcardnumber=None, email=None, address=None, city=None, nationality=None, desde_eventos=False):
         logging.info("Dentro de create_account.")
 
+        print("Crear cuenta, Email: ", email)
+        print("Crear cuenta, City: ", city)
+        print("Crear cuenta, Nation: ", nationality)
+
         if not desde_eventos:
             campos = {
                 "NOMBRE": ow_input,
                 "APELLIDOS": family,
                 "DNI": idcardnumber,
+                "EMAIL":email,
                 "DIRECCIÓN": address,
                 "CIUDAD": city,
                 "NACIONALIDAD": nationality

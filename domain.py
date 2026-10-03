@@ -1,205 +1,165 @@
 import json
-
 import logging
+
+import events
 from database import save_event, load_events
 
 logger = logging.getLogger(__name__)
 
+
 class BankAccount:
+    """Agregado: se reconstruye aplicando los eventos en orden."""
+
     def __init__(self):
         self.owner = None
         self.balance = 0
 
-    def apply(self, event_type, data):
+    def apply(self, event):
+        if isinstance(event, events.AccountCreated):
+            self.owner = event.owner
+        elif isinstance(event, events.MoneyDeposited):
+            self.balance += int(event.amount)
+        elif isinstance(event, (events.MoneyWithdrawn, events.CardPaid)):
+            self.balance -= int(event.amount)
+        # Pendiente de decidir (igual que antes, no afectan al saldo):
+        # MoneyTransferred, OverdraftApplied, AccountClosed,
+        # MortgageDemanded, CreditDemanded.
 
-        if event_type == "AccountCreated":
-            self.owner = data["owner"]
-        elif event_type == "MoneyDeposited":
-            self.balance += int(data["amount"])
-        elif event_type == "Moneywithdraw":
-            self.balance -= int(data["amount"])
-        elif event_type == "CardPayment":
-            self.balance -= int(data["amount"])    
 
 def load_account(account_id):
     account = BankAccount()
 
     for event_type, data_json in load_events(account_id):
-        data = json.loads(data_json)
-        account.apply(event_type, data)
+        try:
+            event = events.from_record(event_type, json.loads(data_json))
+        except events.UnknownEventType:
+            logger.warning("Evento desconocido '%s' en %s, se ignora",
+                           event_type, account_id)
+            continue
+        account.apply(event)
 
     return account
 
 
-def handle_create_account(command):
-    print("Handle_create_account")
-    logger.info("Hadle_create_account")
+def _emit(stream_id, event):
+    """Guarda un evento en el flujo (stream) indicado."""
+    event_type, data = events.to_record(event)
+    logger.info("%s -> %s", event_type, stream_id)
+    return save_event(stream_id, event_type, data)
 
-    resultado = save_event(
+
+def handle_create_account(command):
+    return _emit(
         command.account_id,
-        "AccountCreated",
-        {
-            "account_id": command.account_id,
-            "owner": command.owner,
-            "family_name": command.family_name,
-            "doc_id": command.doc_id,
-            "state":"open"
-        }
+        events.AccountCreated(
+            account_id=command.account_id,
+            owner=command.owner,
+            family_name=command.family_name,
+            doc_id=command.doc_id,
+        ),
     )
-    
-    return resultado
+
 
 def handle_deposit(command):
-    print("handle_deposit")
-    logger.info("handle_deposit")
-
-    save_event(
+    return _emit(
         command.account_id,
-        "MoneyDeposited",
-        {
-            "account_id": command.account_id,
-            "amount": command.amount
-        }
+        events.MoneyDeposited(account_id=command.account_id,
+                              amount=command.amount),
     )
+
 
 def handle_withdraw(command):
-    print("handle_withdraw")
-    logger.info("handle_withdraw")
-
-    save_event(
+    return _emit(
         command.account_id,
-        "Moneywithdraw",
-        {
-            "account_id": command.account_id,
-            "amount": command.amount
-        }
+        events.MoneyWithdrawn(account_id=command.account_id,
+                              amount=command.amount),
     )
+
 
 def handle_moneyTransfer(command):
-    print("handle_moneyTransfer")
-    logger.info("handle_moneyTransfer")
-
-    save_event(
+    return _emit(
         command.account_id,
-        "MoneyTransfer",
-        {
-            "account_id": command.account_id,
-            "amount": command.amount,
-            "To": command.To  
-        }
+        events.MoneyTransferred(account_id=command.account_id,
+                                amount=command.amount,
+                                destination=command.To),
     )
+
 
 def handle_CardPayment(command):
-    print("Card Payment")
-    logger.info("handle_Card_Payment")
-
-    save_event(
+    return _emit(
         command.account_id,
-        "CardPayment",
-        {
-            "amount": command.amount,
-            "shop": command.shop
-        }
+        events.CardPaid(account_id=command.account_id,
+                        amount=command.amount,
+                        shop=command.shop),
     )
+
 
 def handle_demandMortgage(command):
-    print("Demand Mortgage")
-    logger.info("handle_Demand_Mortgage")
-    
-    print("Period: ", command.period)
-
-    save_event(
+    return _emit(
         command.account_id,
-        "demandMortgage",
-        {
-            "account_id": command.account_id,
-            "mortgage_id": command.mortgage_id,
-            "interest_Rate": command.rate,
-            "amount": command.amount,
-            "return_Period": command.period,
-            "initialDate": command.dateInit
-        }
+        events.MortgageDemanded(
+            account_id=command.account_id,
+            mortgage_id=command.mortgage_id,
+            interest_rate=command.rate,
+            amount=command.amount,
+            return_period=command.period,
+            initial_date=command.dateInit,
+        ),
     )
+
 
 def handle_mortgagePayment(command):
-    print("Mortgage Payment")
-    logger.info("handle_Mortgage_Payment")
-
-    save_event(
+    return _emit(
         command.mortgage_id,
-        "mortgagePayment",
-        {
-            "mortgage_id": command.mortgage_id,
-            "amount": command.amount,
-            "payment_date": command.paymentDate
-        }
+        events.MortgagePaid(mortgage_id=command.mortgage_id,
+                            amount=command.amount,
+                            payment_date=command.paymentDate),
     )
+
 
 def handle_mortgageAmortisation(command):
-    print("Mortgage Payment")
-    logger.info("handle_Mortgage_Payment")
-
-    save_event(
+    return _emit(
         command.mortgage_id,
-        "mortgageAmortisation",
-        {
-            "mortgage_id": command.mortgage_id,
-            "amount": command.amount,
-            "payment_date": command.paymentDate
-        }
-    )  
-
-def handle_demandCredit(command):
-    print("demand Credit")
-    logger.info("handle_demandCredit")
-
-    save_event(
-        command.credit_id,
-        "demandCredit",
-        {
-            "account_id": command.account_id,
-            "credit_id": command.credit_id,
-            "interest_Rate": command.rate,
-            "amount": command.amount,
-            "return_Period": command.period,
-            "initialDate": command.dateInit
-        }
-    )  
-
-def handle_CreditPayment(command):
-    print("Credit Payment")
-    logger.info("handle_CreditPayment")
-
-    save_event(
-        command.credit_id,
-        "CreditPayment",
-        {
-            "credit_id": command.credit_id,
-            "amount": command.amount,
-            "payment_date": command.paymentDate
-        }
-    )     
-
-def handle_Overdraft(command):
-    print("handle_deposit")
-    logger.info("handle_deposit")
-
-    save_event(
-        command.account_id,
-        "Overdraft",
-        {
-            "amount": command.amount,
-        }
+        events.MortgageAmortised(mortgage_id=command.mortgage_id,
+                                 amount=command.amount,
+                                 payment_date=command.paymentDate),
     )
 
-def handle_close_account(command):
-    print("handle_Close_account")
-    logger.info("handle_Close_account")
 
-    save_event(
+def handle_demandCredit(command):
+    return _emit(
+        command.credit_id,
+        events.CreditDemanded(
+            account_id=command.account_id,
+            credit_id=command.credit_id,
+            interest_rate=command.rate,
+            amount=command.amount,
+            return_period=command.period,
+            initial_date=command.dateInit,
+        ),
+    )
+
+
+def handle_CreditPayment(command):
+    return _emit(
+        command.credit_id,
+        events.CreditPaid(credit_id=command.credit_id,
+                          amount=command.amount,
+                          payment_date=command.paymentDate),
+    )
+
+
+def handle_Overdraft(command):
+    return _emit(
         command.account_id,
-        "CloseAccount",
-        {
-            "amount": command.amount
-        }
+        events.OverdraftApplied(account_id=command.account_id,
+                                amount=command.amount),
+    )
+
+
+def handle_close_account(command):
+    return _emit(
+        command.account_id,
+        events.AccountClosed(account_id=command.account_id,
+                             amount=command.amount),
     )

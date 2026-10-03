@@ -23,6 +23,7 @@ class EventSourcingApp(toga.App):
     action_selector = toga.Selection()
     boton_execute = False
     operationSelected = ""
+    NationSelected = ""
     listaCredHyp = []
     cuenta = ["", "", "", "", ""]
     EventosCuenta = [["", "", "", ""]]
@@ -148,7 +149,11 @@ class EventSourcingApp(toga.App):
             message="Tienes una nueva tarea pendiente",
             app_name="EventBasedApPy",
             timeout=10
-        )    
+        )
+
+    def cambiar_nacionalidad(self, widget):
+        print("Nacionalidad Select: ", widget.value)  
+        self.NationSelected = widget.value 
         
     def actualizar_estado(self, texto, estado):
         logging.info("Dentro actualizar_estado")
@@ -235,9 +240,13 @@ class EventSourcingApp(toga.App):
 
         self.nationality_selection = toga.Selection(
             items=[],
-            style=Pack(margin=10)
+            style=Pack(margin=10),
+            on_change=self.cambiar_nacionalidad
         )
         self.nationality_selection.items = self.gD.traer_listaNacionalidades()
+
+        self.NationSelected = self.nationality_selection.items[0]
+        print("Previo Crear cuenta: ", self.NationSelected.value)
 
         self.account_input = toga.TextInput(
             value=self.account_id,
@@ -249,7 +258,7 @@ class EventSourcingApp(toga.App):
 
         create_btn = toga.Button(
             "Crear cuenta",
-            on_press=lambda widget: self.gD.create_account(widget, self.account_input.value, self.owner_input.value, self.family_name_input.value, self.doc_id_input.value, self.address_input.value, self.city_input.value, self.nationality_selection)
+            on_press=lambda widget: self.gD.create_account(widget, self.account_input.value, self.owner_input.value, self.family_name_input.value, self.doc_id_input.value, self.email_input.value, self.address_input.value, self.city_input.value, self.NationSelected.value)
         )   
 
         btn_hypotekas = toga.Button(
