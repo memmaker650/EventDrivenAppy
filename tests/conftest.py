@@ -16,8 +16,9 @@ def isolated_db(tmp_path, monkeypatch):
     """Usa un SQLite temporal para no tocar events.db de desarrollo."""
     db_file = tmp_path / "events.db"
 
+    # Misma conexión que la app (FK activas), solo cambia el fichero.
     def _get_connection():
-        return sqlite3.connect(str(db_file))
+        return database.conectar(str(db_file))
 
     monkeypatch.setattr(database, "get_connection", _get_connection)
     database.init_db()

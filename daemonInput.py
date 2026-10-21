@@ -3,19 +3,22 @@ import shutil
 import os
 import json
 from datetime import datetime
+from pathlib import Path
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import logging
 
-import database
+import domain
 import gestionDatos
 
 logger = logging.getLogger(__name__)
 
-carpeta_entrada = r"C:\Users\Jorge.Vega\Documents\ENABLON-proj\PROYECTOS\EbD\EventDrivenApplication\datos\entrada"
-carpeta_tratados = r"C:\Users\Jorge.Vega\Documents\ENABLON-proj\PROYECTOS\EbD\EventDrivenApplication\datos\tratados"
-carpeta_error =r"C:\Users\Jorge.Vega\Documents\ENABLON-proj\PROYECTOS\EbD\EventDrivenApplication\datos\error"
+# Por defecto <proyecto>/datos; se puede cambiar con la variable de entorno EBD_DATOS.
+carpeta_datos = Path(os.environ.get("EBD_DATOS", Path(__file__).resolve().parent / "datos"))
+carpeta_entrada = carpeta_datos / "entrada"
+carpeta_tratados = carpeta_datos / "tratados"
+carpeta_error = carpeta_datos / "error"
 
 fichero = str
 
@@ -49,64 +52,14 @@ class ProcesadoDatosDemonio():
     return_period = str()
     initial_date = str()
 
+    # Reconstruye accounts/hipotecas desde event_store sin volver a grabar eventos.
     def procesar_EventosDB(self):
         logger.info(f"Procesar Eventos en DB")
-        print(f"Procesar Eventos en DB")
 
-        num_eventos_tratados = 0
+        proyeccion = domain.rebuild_read_model()
 
-        # Buscar en DB el ID máximo de cuentas
-        maxID = database.loadMaxAccountID()
-
-        # Recorrer una a una las cuentas y hacer las operaciones
-        # Ordenar los eventos por orden de id
-        database.create_AccountTable_Histo()
-        flag = database.traspasoDatos_Accounts2Histo()
-        if flag:
-            logger.info("Trasvase Datos Accounts OK!")
-            print("Trasvase Datos Accounts OK!")
-        else:
-            print("ERROR !!! Trasvase Datos Accounts ERROR !!!")
-            exit()
-
-        gDd = gestionDatos.gestionDatos()
-        gDd.boton_execution = False
-
-        # Bucle principal: reconstruye accounts desde event_store, sin volver a grabar eventos.
-        for i in range(1, maxID + 1):
-            cuenta = f"ACC-{i:03d}"
-            datos = database.load_events(cuenta)
-
-            for evento in datos:
-                print(evento)
-                num_eventos_tratados += 1
-                self.procesar_DBjson(evento)
-                self.aggregate_id = self.account or cuenta
-                print("Return period: ", self.return_period)
-                if self.event_type in ("AccountCreated", "crear"):
-                    gDd.create_account(
-                        None,
-                        self.aggregate_id,
-                        self.owner,
-                        self.family_name,
-                        self.id_doc,
-                        self.email,
-                        self.address,
-                        self.city,
-                        self.nationality,
-                        desde_eventos=True,
-                    )
-                else:
-                    gDd.ejecutarAccion(None, self.event_type, self.aggregate_id, self.amount, self.destiny, self.shop, self.owner, self.family_name, self.doc_id, self.email, self.address, self.city, self.nationality, self.mortgage_id, self.credit_id, self.return_period, self.interest_rate, self.initial_date)
-
-
-        gDd.calculoEventosACuenta(None)
-
-        # Crear de forma paralela una barra de progreso para poder ver el progreso general del tratamiento.
-
-
-        logger.info(f"Total Eventos tratados : {num_eventos_tratados}")
-        print(f"Total Eventos tratados : {num_eventos_tratados}")
+        logger.info(f"Total Eventos tratados : {proyeccion.processed}, ignorados: {len(proyeccion.skipped)}")
+        print(f"Total Eventos tratados : {proyeccion.processed}, ignorados: {len(proyeccion.skipped)}")
 
         return True
 
@@ -147,36 +100,6 @@ class ProcesadoDatosDemonio():
 
         print("FIN procesar_json")
 
-    def procesar_DBjson(self, datos):
-        logger.info("procesar_DBjson")
-        print("procesar_DBjson")
-
-        self.event_type = datos[0]
-        print("Event_type: ", self.event_type) 
-
-        print("jAsoN: ", datos[1])
-        self.event_data = json.loads(datos[1])
-        print("Event_data: ", self.event_data)
-        self.account = self.event_data.get("account_id")
-        self.aggregate_id = self.account
-        self.amount = float(self.event_data.get("amount", 0) or 0)
-        self.shop = self.event_data.get("shop")
-        self.owner = self.event_data.get("owner")
-        self.family_name = self.event_data.get("family_name")
-        self.id_doc = self.event_data.get("id_doc") or self.event_data.get("doc_id")
-        self.email = self.event_data.get("email")
-        self.address = self.event_data.get("address")
-        self.city = self.event_data.get("city")
-        self.nationality = self.event_data.get("nationality")
-        self.mortgage_id = self.event_data.get("mortgage_id")
-        self.credit_id = self.event_data.get("credit_id")
-        self.interest_rate = self.event_data.get("interest_Rate")
-        self.return_period = self.event_data.get("return_Period")
-        self.initial_date = self.event_data.get("initial_date") or self.event_data.get("initialDate")
-        self.destiny = self.event_data.get("destiny") or self.event_data.get("To")
-
-        print("FIN procesar_DBjson")    
-
     def procesar_json_hypCred(self, datos):
         logger.info("procesar_json hyp_Cred")
         print("procesar_json hyp_Cred")
@@ -195,6 +118,9 @@ class ProcesadoDatosDemonio():
 
 if __name__ == "__main__":
 
+    for carpeta in (carpeta_entrada, carpeta_tratados, carpeta_error):
+        carpeta.mkdir(parents=True, exist_ok=True)
+
     for file in os.listdir(carpeta_entrada):
         if file.endswith(".json"):
             fichero = file
@@ -202,7 +128,7 @@ if __name__ == "__main__":
             PDD.procesar_fichero(os.path.join(carpeta_entrada, fichero))
 
     observer = Observer()
-    observer.schedule(MiHandler(), carpeta_entrada, recursive=False)
+    observer.schedule(MiHandler(), str(carpeta_entrada), recursive=False)
     observer.start()
 
     try:

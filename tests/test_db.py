@@ -61,6 +61,29 @@ def test_save_and_load_events(isolated_db):
     assert len(typed) == 1
 
 
+def test_load_events_cuenta_incluye_sus_prestamos(isolated_db):
+    database.save_event("ACC-001", "AccountCreated", {"account_id": "ACC-001", "owner": "Ana"})
+    database.save_event("ACC-001", "demandMortgage", {"account_id": "ACC-001", "mortgage_id": "HYP-001"})
+    database.save_event("HYP-001", "mortgagePayment", {"mortgage_id": "HYP-001", "amount": 10})
+    database.save_event("CRE-001", "demandCredit", {"account_id": "ACC-001", "credit_id": "CRE-001"})
+    database.save_event("CRE-001", "CreditPayment", {"credit_id": "CRE-001", "amount": 5})
+    # Préstamos de otra cuenta: no deben aparecer.
+    database.save_event("ACC-002", "demandMortgage", {"account_id": "ACC-002", "mortgage_id": "HYP-002"})
+    database.save_event("HYP-002", "mortgagePayment", {"mortgage_id": "HYP-002", "amount": 99})
+    database.save_event("CRE-002", "demandCredit", {"account_id": "ACC-002", "credit_id": "CRE-002"})
+
+    eventos = database.load_eventsCuenta("ACC-001")
+
+    assert [(e[0], e[1]) for e in eventos] == [
+        ("ACC-001", "AccountCreated"),
+        ("ACC-001", "demandMortgage"),
+        ("HYP-001", "mortgagePayment"),
+        ("CRE-001", "demandCredit"),
+        ("CRE-001", "CreditPayment"),
+    ]
+    assert database.load_eventsCuenta("ACC-999") == []
+
+
 def test_save_event_error(isolated_db, monkeypatch):
     class FakeConn:
         def cursor(self):
@@ -78,6 +101,9 @@ def test_save_event_error(isolated_db, monkeypatch):
 def test_load_accounts_y_max_id(isolated_db):
     database.save_event("ACC-003", "AccountCreated", {"owner": "Eva"})
     database.save_event("ACC-010", "AccountCreated", {"owner": "Paco"})
+    # load_accounts lee la tabla accounts (modelo de lectura), no event_store.
+    database.crearCuenta("ACC-010", "Paco")
+    database.crearCuenta("ACC-003", "Eva")
 
     cuentas = database.load_accounts()
     assert cuentas == ["ACC-003", "ACC-010"]
@@ -125,6 +151,7 @@ def test_ids_hipoteca_y_credito(isolated_db):
 
     inicio = datetime(2026, 1, 1)
     fin = datetime(2036, 1, 1)
+    database.crearCuenta("ACC-001", "Ana")
     database.cargar_nuevaHypoteka("ACC-001", "HYP-001", 100000, 3.5, inicio, fin, 500, 120)
     database.cargar_nuevaHypoteka("ACC-001", "CRE-001", 2000, 8, inicio, fin, 180, 12, credito=1)
 
@@ -162,9 +189,11 @@ def test_buscar_listar_y_info_hipoteca(isolated_db):
 def test_guardar_y_actualizar_amortizacion(isolated_db):
     inicio = datetime(2026, 1, 1)
     fin = datetime(2031, 1, 1)
+    database.crearCuenta("ACC-030", "Rosa")
     database.cargar_nuevaHypoteka("ACC-030", "HYP-030", 20000, 3, inicio, fin, 200, 24)
 
-    comision = database.guardar_amortizacion("HYP-030", "2026-06-01", 1000)
+    # amortizaciones_anticipadas.hipoteca_id referencia hipotecas.id (numérico).
+    comision = database.guardar_amortizacion(1, "2026-06-01", 1000)
     assert comision == 5.0
 
     database.actualizar_hypotekaAmortizacion(

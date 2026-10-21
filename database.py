@@ -21,7 +21,13 @@ def get_connection():
 
     db_file = db_file / DB_NAME                  # 👈 aquí concatenas carpeta + nombre
 
-    return sqlite3.connect(db_file)
+    return conectar(db_file)
+
+# PRAGMA foreign_keys es por conexión: hay que activarlo en CADA conexión que se abre.
+def conectar(db_file):
+    conn = sqlite3.connect(db_file)
+    conn.execute("PRAGMA foreign_keys = ON")
+    return conn
 
 def init_db():
     logger.info("init_DB")
@@ -35,31 +41,28 @@ def init_db():
     create_amortizaciones_anticipadasTable()
     comprobar_FK_activas()
 
+# Comprueba que las FK están activas y que los datos existentes las cumplen.
 def comprobar_FK_activas():
     conn = get_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        PRAGMA foreign_keys;
-    """)
+    try:
+        activas = conn.execute("PRAGMA foreign_keys").fetchone()[0]
+        if activas != 1:
+            logger.error(f"FKs DESactivadas: {activas}")
+            return False
 
-    datos = cursor.fetchone()
+        violaciones = conn.execute("PRAGMA foreign_key_check").fetchall()
+    except sqlite3.Error as e:
+        # p.ej. "foreign key mismatch" si falta el índice único de accounts.account_id
+        logger.error(f"Error comprobando FKs: {e}")
+        return False
+    finally:
+        conn.close()
 
-    if datos[0] == 0:
-        print(f"FKs DESactivadas: {datos[0]}")
-        logger.error(f"FKs DESactivadas: {datos[0]}")
-        cursor.execute("""
-            PRAGMA foreign_keys = ON;
-        """)
-        logger.info("FKs Activadas: ")
-    elif datos[0] == 1:
-        print(f"FKs Activas: {datos[0]}")
-        logger.info(f"FKs Activas: {datos[0]}")
-    else: 
-        print(f"FKs estado RARO: {datos[0]}")
-        logger.warning(f"FKs estado RARO: {datos[0]}")
-
-    conn.close()
+    for tabla, rowid, padre, _ in violaciones:
+        logger.warning(f"FK incumplida: {tabla} fila {rowid} apunta a {padre} inexistente")
+    logger.info(f"FKs Activas, {len(violaciones)} filas incumplen")
+    return not violaciones
 
 def create_eventsTable():
     conn = get_connection()
@@ -96,6 +99,13 @@ def create_AccountTable():
         money REAL DEFAULT 0.0
     )
     """)
+
+    # hipotecas.cuenta_asociada referencia account_id: SQLite exige que sea UNIQUE,
+    # si no, toda inserción en hipotecas falla con "foreign key mismatch".
+    try:
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS ux_accounts_account_id ON accounts(account_id)")
+    except sqlite3.IntegrityError as e:
+        logger.error(f"No se puede crear el índice único de accounts.account_id (hay cuentas duplicadas): {e}")
 
     conn.commit()
     conn.close() 
@@ -140,12 +150,13 @@ def traspasoDatos_Accounts2Histo():
                 SELECT id, cuenta_asociada, hipoteca_id, capital_inicial, tasa_anual, fecha_inicio, fecha_fin, cuota_mensual, meses_totales, meses_restantes, saldo_actual, es_Credito FROM hipotecas;
         """)    
 
+        # Primero las filas hijas (hipotecas) y después accounts, por la FK.
         conn.execute("""
-            DELETE FROM accounts;
+            DELETE FROM hipotecas;
             """)
 
         conn.execute("""
-            DELETE FROM hipotecas;
+            DELETE FROM accounts;
             """)
 
         conn.commit()
@@ -439,6 +450,109 @@ def load_eventsFull(aggregate_id):
 
     return rows
 
+# Cargar los eventos de una cuenta y los de sus hipotecas/créditos (streams HYP-/CRE-).
+# Los préstamos de la cuenta se sacan de los propios eventos demandMortgage/demandCredit.
+def load_eventsCuenta(account_id):
+    conn = get_connection()
+
+    cur = conn.execute(
+        """
+        SELECT aggregate_id, event_type, event_data, created_at
+        FROM event_store
+        WHERE aggregate_id = ?
+           OR aggregate_id IN (
+                SELECT json_extract(event_data, '$.mortgage_id')
+                FROM event_store
+                WHERE event_type = 'demandMortgage'
+                AND json_extract(event_data, '$.account_id') = ?
+                UNION
+                SELECT json_extract(event_data, '$.credit_id')
+                FROM event_store
+                WHERE event_type = 'demandCredit'
+                AND json_extract(event_data, '$.account_id') = ?
+           )
+        ORDER BY id
+        """,
+        (account_id, account_id, account_id),
+    )
+
+    rows = cur.fetchall()
+    conn.close()
+
+    return rows
+
+# Cargar TODOS los eventos en orden global (necesario para transferencias y préstamos).
+def load_all_events():
+    conn = get_connection()
+
+    cur = conn.execute(
+        """
+        SELECT id, aggregate_id, event_type, event_data
+        FROM event_store
+        ORDER BY id ASC
+        """
+    )
+
+    rows = cur.fetchall()
+    conn.close()
+
+    return rows
+
+# Volcar la proyección de eventos en accounts/hipotecas, todo en una transacción.
+# Historiza antes el estado actual. No borra nada: email, dirección, etc. no
+# viajan en los eventos, así que se actualizan saldo y estado de las cuentas
+# existentes, se dan de alta las que falten y se añaden los préstamos nuevos.
+def guardar_proyeccion(cuentas, prestamos):
+    logger.info("Guardar proyección de eventos.")
+    conn = get_connection()
+
+    try:
+        with conn:
+            conn.execute("""
+                INSERT INTO accounts_histo (id, account_id, name, family_name, id_doc, email, address, city, nationality, created_at, state, money)
+                    SELECT id, account_id, name, family_name, id_doc, email, address, city, nationality, created_at, state, money FROM accounts
+            """)
+
+            conn.execute("""
+                INSERT INTO hipotecas_histo (id, cuenta_asociada, hipoteca_id, capital_inicial, tasa_anual, fecha_inicio, fecha_fin, cuota_mensual, meses_totales, meses_restantes, saldo_actual, es_Credito)
+                    SELECT id, cuenta_asociada, hipoteca_id, capital_inicial, tasa_anual, fecha_inicio, fecha_fin, cuota_mensual, meses_totales, meses_restantes, saldo_actual, es_Credito FROM hipotecas
+            """)
+
+            fechaActual = datetime.now().isoformat(timespec='seconds')
+
+            for account_id, name, family, dni, state, money in cuentas:
+                cur = conn.execute("""
+                    UPDATE accounts
+                    SET money = ?, state = ?
+                    WHERE account_id = ?
+                    """, (money, state, account_id))
+
+                if cur.rowcount == 0:
+                    # Dirección, ciudad y nacionalidad no viajan en los eventos.
+                    conn.execute("""
+                        INSERT INTO accounts(account_id, name, family_name, id_doc, email, address, city, nationality, created_at, state, money)
+                        VALUES (?, ?, ?, ?, '', '', '', '', ?, ?, ?)
+                        """, (account_id, name, family or "", dni or "", fechaActual, state, money))
+
+            # Préstamos cuya cuenta no existe en accounts: la FK los rechazaría y
+            # tumbaría toda la transacción, así que se omiten y se devuelven.
+            sin_cuenta = []
+            for prestamo in prestamos:
+                cuenta, hipoteca_id = prestamo[0], prestamo[1]
+                if not conn.execute("SELECT 1 FROM accounts WHERE account_id = ?", (cuenta,)).fetchone():
+                    sin_cuenta.append(hipoteca_id)
+                    continue
+
+                conn.execute("""
+                    INSERT INTO hipotecas(cuenta_asociada, hipoteca_id, capital_inicial, tasa_anual, fecha_inicio, fecha_fin, cuota_mensual, meses_totales, meses_restantes, saldo_actual, es_Credito)
+                    SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                    WHERE NOT EXISTS (SELECT 1 FROM hipotecas WHERE hipoteca_id = ?)
+                    """, (*prestamo, hipoteca_id))
+    finally:
+        conn.close()
+
+    return sin_cuenta
+
 # Cargar los eventos de un id de una cuenta.
 def load_eventsOfType(aggregate_id, type):
     conn = get_connection()
@@ -719,6 +833,7 @@ def generar_id_hypoteka():
     cur = conn.execute("""
         SELECT hipoteca_id
         FROM hipotecas
+        WHERE es_Credito = 0
         ORDER BY id DESC
         LIMIT 1
         """)
@@ -766,44 +881,51 @@ def cargar_nuevaHypoteka(origen, hipoteca_id, capital, tasa_anual, fecha_inicio,
     saldo_actual = capital
 
     conn = get_connection()
+    # Commit si va bien; rollback si falla (p.ej. FK) para no dejar la BD bloqueada; cerrar siempre.
+    try:
 
-    if credito !=0:
+        if credito !=0:
+                conn.execute("""
+                INSERT INTO hipotecas(cuenta_asociada, hipoteca_id, capital_inicial, tasa_anual, fecha_inicio, fecha_fin, cuota_mensual, meses_totales, meses_restantes, saldo_actual, es_Credito)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    origen,
+                    hipoteca_id,
+                    capital,
+                    tasa_anual,
+                    fecha_inicio,
+                    fecha_fin,
+                    cuota, 
+                    meses_restante,
+                    meses_restante,
+                    saldo_actual,
+                    1
+                ))
+        else:   
             conn.execute("""
-            INSERT INTO hipotecas(cuenta_asociada, hipoteca_id, capital_inicial, tasa_anual, fecha_inicio, fecha_fin, cuota_mensual, meses_totales, meses_restantes, saldo_actual, es_Credito)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                origen,
-                hipoteca_id,
-                capital,
-                tasa_anual,
-                fecha_inicio,
-                fecha_fin,
-                cuota, 
-                meses_restante,
-                meses_restante,
-                saldo_actual,
-                1
-            ))
-    else:   
-        conn.execute("""
-            INSERT INTO hipotecas(cuenta_asociada, hipoteca_id, capital_inicial, tasa_anual, fecha_inicio, fecha_fin, cuota_mensual, meses_totales, meses_restantes, saldo_actual)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                origen,
-                hipoteca_id,
-                capital,
-                tasa_anual,
-                fecha_inicio,
-                fecha_fin,
-                cuota, 
-                meses_restante,
-                meses_restante,
-                saldo_actual
-            ))
+                INSERT INTO hipotecas(cuenta_asociada, hipoteca_id, capital_inicial, tasa_anual, fecha_inicio, fecha_fin, cuota_mensual, meses_totales, meses_restantes, saldo_actual)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    origen,
+                    hipoteca_id,
+                    capital,
+                    tasa_anual,
+                    fecha_inicio,
+                    fecha_fin,
+                    cuota, 
+                    meses_restante,
+                    meses_restante,
+                    saldo_actual
+                ))
 
-    conn.commit()
+        conn.commit()
+    except sqlite3.Error:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 def buscar_hypoteka(hipoteca_id):
     logger.info("SELECT Hipoteca por ID")
@@ -829,26 +951,33 @@ def guardar_amortizacion(hipoteca_id, fecha, importe):
     comision = round(importe * 0.005, 2)
 
     conn = get_connection()
-    cursor = conn.cursor()
+    # Commit si va bien; rollback si falla (p.ej. FK) para no dejar la BD bloqueada; cerrar siempre.
+    try:
+        cursor = conn.cursor()
 
-    cursor.execute("""
-        INSERT INTO amortizaciones_anticipadas
-        (
-            hipoteca_id,
-            fecha,
-            importe,
-            comision
-        )
-        VALUES (?, ?, ?, ?)
-        """,
-        (
-            hipoteca_id,
-            fecha,
-            importe,
-            comision
-        ))
+        cursor.execute("""
+            INSERT INTO amortizaciones_anticipadas
+            (
+                hipoteca_id,
+                fecha,
+                importe,
+                comision
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                hipoteca_id,
+                fecha,
+                importe,
+                comision
+            ))
 
-    conn.commit()
+        conn.commit()
+    except sqlite3.Error:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
     return comision
 
@@ -856,38 +985,45 @@ def actualizar_hypotekaAmortizacion(resultado, hipoteca_id, importe_amortizado):
     logger.info("UPDATE actualizar hypoteka Amortizacion")
 
     conn = get_connection()
-    cursor = conn.cursor()
+    # Commit si va bien; rollback si falla (p.ej. FK) para no dejar la BD bloqueada; cerrar siempre.
+    try:
+        cursor = conn.cursor()
 
-    cursor.execute("""
-            UPDATE hipotecas
-            SET saldo_actual = ?,
-                meses_restantes = ?
-            WHERE id = ?
-        """,
-        (
-            resultado["nuevo_saldo"],
-            resultado["meses_restantes"],
-            hipoteca_id
-        ))
+        cursor.execute("""
+                UPDATE hipotecas
+                SET saldo_actual = ?,
+                    meses_restantes = ?
+                WHERE id = ?
+            """,
+            (
+                resultado["nuevo_saldo"],
+                resultado["meses_restantes"],
+                hipoteca_id
+            ))
 
-    cursor.execute("""
-            INSERT INTO amortizaciones_anticipadas(
+        cursor.execute("""
+                INSERT INTO amortizaciones_anticipadas(
+                    hipoteca_id,
+                    fecha,
+                    importe,
+                    comision
+                )
+                VALUES(
+                    ?, date('now'), ?, ?
+                )
+            """,
+            (
                 hipoteca_id,
-                fecha,
-                importe,
-                comision
-            )
-            VALUES(
-                ?, date('now'), ?, ?
-            )
-        """,
-        (
-            hipoteca_id,
-            importe_amortizado,
-            resultado["comision"]
-        ))
+                importe_amortizado,
+                resultado["comision"]
+            ))
 
-    conn.commit()
+        conn.commit()
+    except sqlite3.Error:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 def buscar_hypoteka_asociadaCuenta(cuenta_asociada):
     logger.info("BUSCAR Hypoteka a partir de cuenta.")
@@ -899,6 +1035,7 @@ def buscar_hypoteka_asociadaCuenta(cuenta_asociada):
             SELECT hipoteca_id
             FROM hipotecas
             WHERE cuenta_asociada = ?
+            AND es_Credito = 0
         """,
         (
             cuenta_asociada,

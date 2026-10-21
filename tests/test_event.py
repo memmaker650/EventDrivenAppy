@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import commands
 import domain
 import events
@@ -44,41 +46,34 @@ def test_mortgage_and_credit_commands():
 
 def test_event_classes():
     created = events.AccountCreated("ACC-001", "Luis")
-    deposited = events.MoneyDeposited(80)
-    withdrawn = events.MoneyWithDraw(30)
-    mortgage = events.DemandMortgage("ACC-001", 3.5, 100000, 20, "2026-01-01")
-    mortgage_pay = events.MortgagePayment("ACC-001", 400, "2026-02-01")
-    amort = events.AmortisationPayment("ACC-001", 1000, "2026-03-01")
-    credit = events.DemandCredit("ACC-001", 7, 2000, 1, "2026-01-01")
-    credit_pay = events.CreditPayment("ACC-001", 50, "2026-02-01")
-    transfer = events.MoneyTransfer(20, "ACC-009")
-    card = events.PaymentCard(15, "Ikea")
-    overdraft = events.Overdraft("ACC-001", 10)
-    closed = events.AccountClosed("ACC-001", "Luis")
+    withdrawn = events.MoneyWithdrawn("ACC-001", 30)
+    mortgage = events.MortgageDemanded("ACC-001", "HYP-001", 3.5, 100000, 20, "2026-01-01")
+    mortgage_pay = events.MortgagePaid("HYP-001", 400, "2026-02-01")
+    transfer = events.MoneyTransferred("ACC-001", 20, "ACC-009")
+    card = events.CardPaid(15, "Ikea", "ACC-001")
+    closed = events.AccountClosed("ACC-001")
 
+    # Los importes se guardan en positivo; el signo lo pone BankAccount.apply.
     assert created.state == "open"
-    assert deposited.amount == 80
-    assert withdrawn.amount == -30
-    assert mortgage.amount == -100000
+    assert withdrawn.amount == 30
+    assert mortgage.amount == 100000
     assert mortgage_pay.payment_date == "2026-02-01"
-    assert amort.amount == -1000
-    assert credit.interest_rate == 7
-    assert credit_pay.amount == -50
-    assert transfer.destinaton == "ACC-009"
+    assert transfer.to_data()["To"] == "ACC-009"
     assert card.shop == "Ikea"
-    assert overdraft.amount == 10
-    assert closed.state == "closed"
+    assert closed.account_id == "ACC-001"
 
 
 def test_bank_account_apply_secuencia():
-    account = domain.BankAccount()
-    account.apply("AccountCreated", {"owner": "Marta"})
-    account.apply("MoneyDeposited", {"amount": 200})
-    account.apply("Moneywithdraw", {"amount": 50})
-    account.apply("CardPayment", {"amount": 20})
+    account = domain.BankAccount("ACC-001")
+    account.apply(events.AccountCreated("ACC-001", "Marta"))
+    account.apply(events.MoneyDeposited("ACC-001", 200))
+    account.apply(events.MoneyWithdrawn("ACC-001", "50"))
+    account.apply(events.CardPaid("20,5", "Bar", "ACC-001"))
+    account.apply(events.AccountClosed("ACC-001"))
 
     assert account.owner == "Marta"
-    assert account.balance == 130
+    assert account.balance == Decimal("129.5")
+    assert account.state == "closed"
 
 
 def test_load_account_reconstruye_desde_eventos(isolated_db):

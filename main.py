@@ -39,16 +39,27 @@ class EventSourcingApp(toga.App):
 
     def refrescar_cuentas(self):
         self.account_input.value = self.gD.initBusiness()
-        print("Account_id refreshed: ", self.account_id)
-        self.account_selector.items = self.gD.load_accounts()   
+        print("Account_id refreshed: ", self.account_input.value)
+        cuentas = self.gD.load_accounts()
+
+        # Recargar sin perder la cuenta que el usuario tenía elegida.
+        for selector in (self.account_selector, self.transfer_account_selector):
+            seleccionada = selector.value
+            selector.items = cuentas
+            if seleccionada in cuentas:
+                selector.value = seleccionada
 
     def account_changed(self, widget):  
         logging.info("Dentro de Account_Changed")
 
         self.account_id = widget.value
 
-    def account_changed_CuentaInfo(self, widget):  
+    def account_changed_CuentaInfo(self, widget):
         logging.info("Dentro de Account_Changed")
+
+        # Al cargar el selector salta on_change antes de que existan las tablas.
+        if not hasattr(self, "tablaEventos"):
+            return
 
         self.account_id = widget.value
 
@@ -61,26 +72,49 @@ class EventSourcingApp(toga.App):
             for evento in self.eventosCuenta
         ]
 
-    def type_op_changed(self, widget):  
+    def check_eventos_cuentas(self, widget):
+        self.gD.calculoEventosACuenta(widget)
+        # Refrescar la cuenta mostrada con el saldo recalculado.
+        if self.cuentas_selector.value:
+            self.account_changed_CuentaInfo(self.cuentas_selector)
+
+    def info_account_changed(self, widget):
+        logging.info("Dentro de info_account_changed")
+
+        self.account_id = widget.value
+        # Al cambiar de cuenta, recargar la lista de hipotecas/créditos.
+        if hasattr(self, "Lista_elementos"):
+            self.type_op_changed(self.hyp_cred)
+
+    def type_op_changed(self, widget):
         logging.info("Dentro de type_op_Changed")
 
         if widget.value == "Hipoteca":
             self.operationSelected = "hip"
         else:
-             self.operationSelected = "cre"  
+             self.operationSelected = "cre"
 
-        self.listaCredHyp = self.gD.listar_hypotecasCreditos_asociados(self.account_id, self.operationSelected)     
+        # on_change salta al crear el selector, antes de que exista la lista.
+        if not hasattr(self, "Lista_elementos"):
+            return
+
+        self.listaCredHyp = self.gD.listar_hypotecasCreditos_asociados(self.account_id, self.operationSelected)
         self.Lista_elementos.items = self.listaCredHyp
 
     def negocioTraerDatosCredHipotecas(self, widget):
         id = widget.value
 
-        self.dataEventosPagosHypCred = self.gD.traer_EventosPago_CreditoHypoteka(id, "mortgagePayment")
+        self.tabla_superior.data.clear()
+        self.tabla_inferior.data.clear()
+        # Lista vacía (cuenta sin hipotecas/créditos): nada que mostrar.
+        if not id:
+            return
+
+        tipo_pago = "CreditPayment" if self.operationSelected == "cre" else "mortgagePayment"
+        self.dataEventosPagosHypCred = self.gD.traer_EventosPago_CreditoHypoteka(id, tipo_pago)
         self.dataCredHyp = self.gD.traer_Info_CreditoHypoteka(id)
         print("Datos Hipoteca: ", self.dataCredHyp)
         total = 0
-
-        self.tabla_superior.data.clear()
 
         for dataHC in self.dataEventosPagosHypCred:
             self.tabla_superior.data.append(
@@ -97,7 +131,6 @@ class EventSourcingApp(toga.App):
                 ]
         )
 
-        self.tabla_inferior.data.clear()
         self.tabla_inferior.data.append(
             [
                 self.dataCredHyp[1],
@@ -116,40 +149,33 @@ class EventSourcingApp(toga.App):
 
         accion = widget.value
 
-        # Ocultar todo por defecto
-        self.amount_input.style.visibility = "hidden"
-        self.transfer_account_selector.style.visibility = "hidden"
+        # Campos (etiqueta + entrada) que necesita cada acción; crear y cerrar no necesitan ninguno.
+        campos_por_accion = {
+            "depositar": (self.amount_box,),
+            "retirar": (self.amount_box,),
+            "pago_hipoteca": (self.amount_box,),
+            "pago_crédito": (self.amount_box,),
+            "pedir_hipoteca": (self.amount_box, self.rate_box, self.years_box),
+            "pedir_crédito": (self.amount_box, self.rate_box, self.years_box),
+            "pago_tarjeta": (self.amount_box, self.shop_box),
+            "transferencia": (self.amount_box, self.label_destino, self.transfer_account_selector),
+        }
+        visibles = campos_por_accion.get(accion, ())
 
-        # Crear y cerrar: nada
-        if accion in ("crear", "cerrar"):
-            pass
-        # Depositar, retirar y pago_tarjeta: solo cantidad
-        elif accion in ("depositar", "retirar", "pago_hipoteca", "pago_crédito"):
-            self.amount_input.style.visibility = "visible"
-            self.interest_rate.visibility = "hidden"
-            self.yearsReturn.visibility = "hidden"
-            self.shop_input.style.visibility = "hidden"
-        # Hipoteca y Crédito: creación
-        elif accion in ("pedir_hipoteca", "pedir_crédito"):
-            self.amount_input.style.visibility = "visible"   
-            self.interest_rate.visibility = "visible"
-            self.yearsReturn.visibility = "visible"
-            self.shop_input.style.visibility = "hidden"
-        elif accion in ("pago_tarjeta"): 
-            self.amount_input.style.visibility = "visible"   
-            self.shop_input.style.visibility = "visible"
-        # Transferencia: cantidad + cuenta destino
-        elif accion == "transferencia":
-            self.amount_input.style.visibility = "visible"
-            self.label_destino.style.visibility = "visible"
-            self.transfer_account_selector.style.visibility = "visible" 
+        for campo in (self.amount_box, self.rate_box, self.years_box, self.shop_box,
+                      self.label_destino, self.transfer_account_selector):
+            campo.style.visibility = "visible" if campo in visibles else "hidden"
 
-        notification.notify(
-            title="Mi aplicación",
-            message="Tienes una nueva tarea pendiente",
-            app_name="EventBasedApPy",
-            timeout=10
-        )
+        # En macOS plyer necesita pyobjus; sin él la notificación no debe romper la UI.
+        try:
+            notification.notify(
+                title="Mi aplicación",
+                message="Tienes una nueva tarea pendiente",
+                app_name="EventBasedApPy",
+                timeout=10
+            )
+        except NotImplementedError as e:
+            logging.warning(f"Notificación no disponible: {e}")
 
     def cambiar_nacionalidad(self, widget):
         print("Nacionalidad Select: ", widget.value)  
@@ -176,6 +202,46 @@ class EventSourcingApp(toga.App):
 
         # Refresco los datos tras creación cuenta.
         self.refrescar_cuentas()    
+
+    def limpiar_formulario(self):
+        for campo in (self.owner_input, self.family_name_input, self.doc_id_input,
+                      self.email_input, self.address_input, self.city_input):
+            campo.value = ""
+        self.nationality_selection.value = self.nationality_selection.items[0].value
+
+    def crear_cuenta(self, widget):
+        creada = self.gD.create_account(widget, self.account_input.value, self.owner_input.value, self.family_name_input.value, self.doc_id_input.value, self.email_input.value, self.address_input.value, self.city_input.value, self.nationality_selection.value)
+        if creada:
+            self.limpiar_formulario()
+
+    def ejecutar(self, widget):
+        accion = self.action_selector.value
+        ok = self.gD.ejecutarAccion(
+            widget,
+            accion=accion,
+            origen=self.account_selector.value,
+            cantidad=self.amount_input.value,
+            destino=self.transfer_account_selector.value,
+            tienda=self.shop_input.value,
+            propietario=self.owner_input.value,
+            apellidos=self.family_name_input.value,
+            doc_id=self.doc_id_input.value,
+            email=self.email_input.value,
+            address=self.address_input.value,
+            city=self.city_input.value,
+            nationality=self.nationality_selection.value,
+            return_period=self.yearsReturn.value,
+            rate=self.interest_rate.value,
+        )
+        if ok and accion == "crear":
+            self.limpiar_formulario()
+
+    def _campo(self, texto, entrada):
+        """Etiqueta + entrada en una fila; se muestra/oculta como un bloque."""
+        return toga.Box(
+            children=[toga.Label(texto, style=Pack(width=170, margin_top=4)), entrada],
+            style=Pack(direction=ROW, margin_left=10, margin_top=2, margin_bottom=2),
+        )
 
     @staticmethod
     def mensajeUsuario(self, mensaje, color):
@@ -258,7 +324,7 @@ class EventSourcingApp(toga.App):
 
         create_btn = toga.Button(
             "Crear cuenta",
-            on_press=lambda widget: self.gD.create_account(widget, self.account_input.value, self.owner_input.value, self.family_name_input.value, self.doc_id_input.value, self.email_input.value, self.address_input.value, self.city_input.value, self.NationSelected.value)
+            on_press=self.crear_cuenta
         )   
 
         btn_hypotekas = toga.Button(
@@ -268,7 +334,7 @@ class EventSourcingApp(toga.App):
             on_press=self.ventana_infoHipoteca)
 
         btn_izquierdo = toga.Button(
-            "Batcg Tratar Eventos",
+            "Batch Tratar Eventos",
             style=Pack(width=200),
             background_color = "blue",
             on_press=self.gD.lanzar_BatchTratarEventos
@@ -335,6 +401,11 @@ class EventSourcingApp(toga.App):
             style=Pack(width=200)
         )
 
+        self.amount_box = self._campo("Cantidad (€) :", self.amount_input)
+        self.rate_box = self._campo("Tasa interés (%) :", self.interest_rate)
+        self.years_box = self._campo("Periodo retorno (años) :", self.yearsReturn)
+        self.shop_box = self._campo("Tienda :", self.shop_input)
+
         # Selector de cuenta destino (para transferencia)
         self.label_destino = toga.Label(
             "Cuenta destino :",
@@ -349,15 +420,15 @@ class EventSourcingApp(toga.App):
         # Botón Ejecutar Acción
         self.execute_btn = toga.Button(
             "Ejecutar",
-            on_press=lambda widget: self.gD.ejecutarAccion(widget, self.action_selector.value, self.account_selector.value, self.amount_input.value, self.transfer_account_selector.value, None, self.shop_input.value, self.interest_rate.value, self.yearsReturn.value),
+            on_press=self.ejecutar,
             style=Pack(margin=10)
         )
 
         # Ocultos inicialmente
-        self.amount_input.style.visibility = "hidden"
-        self.shop_input.style.visibility = "hidden"
-        self.interest_rate.visibility = "hidden"
-        self.yearsReturn.visibility = "hidden"
+        self.amount_box.style.visibility = "hidden"
+        self.shop_box.style.visibility = "hidden"
+        self.rate_box.style.visibility = "hidden"
+        self.years_box.style.visibility = "hidden"
         self.label_destino.style.visibility = "hidden"
         self.transfer_account_selector.style.visibility = "hidden"
 
@@ -389,10 +460,10 @@ class EventSourcingApp(toga.App):
                 self.account_selector,
                 self.accion_label, 
                 self.action_selector,
-                self.interest_rate,
-                self.amount_input,
-                self.yearsReturn, 
-                self.shop_input,
+                self.amount_box,
+                self.rate_box,
+                self.years_box,
+                self.shop_box,
                 self.label_destino,
                 self.transfer_account_selector,
                 contenedor_botonhyp,
@@ -428,15 +499,13 @@ class EventSourcingApp(toga.App):
             "Listado de cuentas bancarias",
             style=Pack(margin_bottom=10)
         )
-        self.account_selector = "ACC-001"
-        self.account_selector = toga.Selection(
+        # Selector propio: no pisar self.account_selector de la pantalla principal.
+        # Los items se cargan al final, cuando ya existen las tablas.
+        self.cuentas_selector = toga.Selection(
             items=[],
             on_change=self.account_changed_CuentaInfo
-        )   
-        cuentas_items = self.gD.load_accounts()
-        cuentas_items.insert(0, "") # Añadi vacío como primer elementos, user selecciona cuenta que ver.
-        self.account_selector.items = cuentas_items
-        
+        )
+
         # Datos de la cuenta
         datos_cuenta = [
             (
@@ -480,13 +549,13 @@ class EventSourcingApp(toga.App):
             ]
 
         label_EventosCuenta = toga.Label(
-            "Detalles cuenta: ",
+            "Eventos cuenta: ",
             style=Pack(margin_bottom=10)
         )
 
         self.tablaEventos = toga.Table(
             columns=[
-                "ID cuenta",
+                "Cuenta / préstamo",
                 "Tipo evento",
                 "Evento",
                 "Fecha creación",
@@ -497,12 +566,16 @@ class EventSourcingApp(toga.App):
 
         self.btn_CheckEvents = toga.Button(
             "Check Eventos-Cuentas",
-            on_press=self.gD.calculoEventosACuenta,
+            on_press=self.check_eventos_cuentas,
             style=Pack(margin=10)
         )
 
+        cuentas_items = self.gD.load_accounts()
+        cuentas_items.insert(0, "") # Añadi vacío como primer elementos, user selecciona cuenta que ver.
+        self.cuentas_selector.items = cuentas_items
+
         box.add(titulo)
-        box.add(self.account_selector)
+        box.add(self.cuentas_selector)
         box.add(label_detallesCuenta)
         box.add(self.tabla_cuenta)
         box.add(self.espacio)
@@ -516,15 +589,15 @@ class EventSourcingApp(toga.App):
     # Abrir nueva ventana para mostrar detalles de las cuetas con créditos o hipotecas.
     #------------------------------------------------------------------------------------
     def ventana_infoHipoteca(self, widget):
-        self.main_window = toga.MainWindow(title=self.formal_name)
+        # Ventana secundaria: si fuera MainWindow, al cerrarla se cerraría la app.
+        ventana = toga.Window(title="Hipotecas y créditos", size=(900, 600))
 
         # Desplegable
         self.combo = toga.Selection(
                 items=[],
                 style=Pack(margin=5),
-                on_change=self.account_changed
+                on_change=self.info_account_changed
                 )
-        self.combo.items = self.gD.load_accounts()
 
         self.hyp_cred = toga.Selection(
                 items=["Crédito", "Hipoteca"],
@@ -540,12 +613,12 @@ class EventSourcingApp(toga.App):
 
         # Primera tabla
         titulo = toga.Label(
-            "Pagos Hipoteca",
+            "Pagos",
             style=Pack(margin_bottom=10)
         )
 
         self.tabla_superior = toga.Table(
-            columns=["ID", "Nombre"],
+            columns=["Importe", "Fecha pago"],
             data=[
                 ["", ""],
                 ["", ""],
@@ -555,16 +628,14 @@ class EventSourcingApp(toga.App):
 
         # Label
         self.label = toga.Label(
-            "Detalles Hipoteca :",
+            "Detalles :",
             style=Pack(margin=(10, 5))
         )
 
-        # Segunda tabla 
+        # Segunda tabla: mismo orden que obtenerInfoCreditoHypoteka()[1:8]
         self.tabla_inferior = toga.Table(
-            columns=["Id Hipoteca", "Montante", "Interés", "Meses", "Cuota"],
-            data=[
-            [self.dataCredHyp[1], self.dataCredHyp[2], self.dataCredHyp[3], self.dataCredHyp[4],self.dataCredHyp[5]],
-            ],
+            columns=["Id", "Montante", "Interés", "Fecha inicio", "Cuota", "Meses", "Saldo"],
+            data=[],
             style=Pack(flex=1, margin=5)
         )
 
@@ -581,8 +652,10 @@ class EventSourcingApp(toga.App):
         caja.add(self.label)
         caja.add(self.tabla_inferior)
 
-        self.main_window.content = caja
-        self.main_window.show()
+        self.combo.items = self.gD.load_accounts()
+
+        ventana.content = caja
+        ventana.show()
 
     def refresh_balance(self):
         acc = self.gD.domainAccount(self.account_id)

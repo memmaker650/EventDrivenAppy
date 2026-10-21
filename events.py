@@ -15,7 +15,7 @@ Reglas:
 """
 import logging
 from dataclasses import dataclass, asdict, fields
-from typing import Any, ClassVar, Dict, Tuple, Type
+from typing import Any, ClassVar, Dict, Optional, Tuple, Type
 
 logger = logging.getLogger(__name__)
 
@@ -138,7 +138,7 @@ class MortgagePaid(Event):
     event_type = "mortgagePayment"
     mortgage_id: str
     amount: float
-    payment_date: str
+    payment_date: Optional[str] = None  # None: pago sin fecha
 
 
 @dataclass(frozen=True)
@@ -146,7 +146,7 @@ class MortgageAmortised(Event):
     event_type = "mortgageAmortisation"
     mortgage_id: str
     amount: float
-    payment_date: str
+    payment_date: Optional[str] = None  # None: pago sin fecha
 
 
 # --------------------------------------------------------------- créditos
@@ -167,7 +167,7 @@ class CreditPaid(Event):
     event_type = "CreditPayment"
     credit_id: str
     amount: float
-    payment_date: str
+    payment_date: Optional[str] = None  # None: pago sin fecha
 
 
 # ------------------------------------------------------------ serialización

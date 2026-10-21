@@ -81,6 +81,7 @@ Librerías a instalar:
 - pip install pytest-html
 
 python -m pytest tests -q
+python3.14 -m pytest tests -q
 
 pytest --cov=. --cov-report=html
 pytest --html=./tests/results-cov/informe.html
@@ -114,3 +115,8 @@ Cambios con dependencias nuevas :
     3.- briefcase run windows
 
 Generar paquete windows --> briefcase package windows
+
+**** Informe seguridad :
+----------------------------
+pip install bandit
+bandit -r . -f html -o informe_bandit.html -x ./tests,./venv

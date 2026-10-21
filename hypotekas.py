@@ -7,6 +7,21 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+def cuota_mensual(capital, tasa_anual, meses):
+    """Cuota del sistema francés. Acepta la tasa como número o texto con coma."""
+    tasa_anual = float(str(tasa_anual).replace(',', '.'))
+    capital = float(capital)
+    meses = float(meses)
+
+    tasa_mensual = tasa_anual / 100 / 12
+
+    if tasa_mensual == 0:
+        return round(capital / meses, 2)
+
+    cuota = (capital * tasa_mensual * (1 + tasa_mensual) ** meses) / ((1 + tasa_mensual) ** meses - 1)
+
+    return round(cuota, 2)
+
 class HipotecaManager:
     def __init__(self):
         database.init_db()
@@ -23,18 +38,9 @@ class HipotecaManager:
     def calcular_cuota(self, capital, tasa_anual, meses):
         logger.info("Método cálculo CUOTAS.")
 
-        tasa_anual = float(tasa_anual.replace(',', '.')) # Convierto la coma en . si viene así
-        tasa_anual = float(tasa_anual)
-        capital = float(capital)
-        meses = float(meses)
+        return cuota_mensual(capital, tasa_anual, meses)
 
-        tasa_mensual = tasa_anual / 100 / 12
-
-        cuota = (capital * tasa_mensual * (1 + tasa_mensual) ** meses) / ((1 + tasa_mensual) ** meses - 1)
-
-        return round(cuota, 2)
-
-    def crear_hipoteca(self, origen, capital, tasa_anual, fecha_inicio, fecha_fin, credito=0):
+    def crear_hipoteca(self, origen, capital, tasa_anual, fecha_inicio, fecha_fin, credito=0, hipoteca_id=None):
         logger.info("Crear Hypoteka")
 
         meses = self.meses_entre_fechas(
@@ -51,13 +57,14 @@ class HipotecaManager:
         print("Cuota: ", cuota)
         
 
+        # Si ya se emitió el evento con un id, se usa ese mismo id.
         if credito != 0:
             # Asignar hipoteca a la cuenta asociada.
-            hipoteca_id = database.generar_id_credito()
+            hipoteca_id = hipoteca_id or database.generar_id_credito()
             database.cargar_nuevaHypoteka(origen, hipoteca_id, capital, tasa_anual, fecha_inicio, fecha_fin, cuota, meses, 1)
         else:
             # Asignar hipoteca a la cuenta asociada.
-            hipoteca_id = database.generar_id_hypoteka()
+            hipoteca_id = hipoteca_id or database.generar_id_hypoteka()
             database.cargar_nuevaHypoteka(origen, hipoteca_id, capital, tasa_anual, fecha_inicio, fecha_fin, cuota, meses)
 
         return hipoteca_id, cuota
