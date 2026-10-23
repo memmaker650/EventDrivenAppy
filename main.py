@@ -236,6 +236,20 @@ class EventSourcingApp(toga.App):
         if ok and accion == "crear":
             self.limpiar_formulario()
 
+    # Ventana con el resumen completo del último batch (también queda en el log).
+    def mostrar_resumen(self, texto):
+        self.texto_resumen = toga.MultilineTextInput(
+            value=texto,
+            readonly=True,
+            style=Pack(flex=1, font_family="monospace"),
+        )
+        self.ventana_resumen = toga.Window(title="Resultado batch", size=(900, 600))
+        self.ventana_resumen.content = toga.Box(
+            children=[self.texto_resumen],
+            style=Pack(direction=COLUMN, margin=10),
+        )
+        self.ventana_resumen.show()
+
     def _campo(self, texto, entrada):
         """Etiqueta + entrada en una fila; se muestra/oculta como un bloque."""
         return toga.Box(

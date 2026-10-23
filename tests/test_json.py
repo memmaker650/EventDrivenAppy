@@ -133,17 +133,22 @@ def test_handler_on_created_procesa_fichero(monkeypatch):
 
     def fake_procesar(_self, ruta):
         llamado["ruta"] = ruta
+        return "resumen"
 
     monkeypatch.setattr(daemonInput.ProcesadoDatosDemonio, "procesar_fichero", fake_procesar)
+    # Tras el fichero se recalculan saldos y se registra el resumen.
+    monkeypatch.setattr(daemonInput, "completar_batch", lambda resumen: llamado.update(resumen=resumen))
 
     evento = MagicMock()
     evento.is_directory = False
     evento.src_path = "/tmp/dato.json"
     daemonInput.MiHandler().on_created(evento)
-    assert llamado["ruta"] == "/tmp/dato.json"
+    assert llamado == {"ruta": "/tmp/dato.json", "resumen": "resumen"}
 
 
 def test_rutas_de_carpetas_son_paths():
-    assert Path(daemonInput.carpeta_entrada).name == "entrada"
+    # Por defecto <proyecto>/datos/{input,tratados,error} (los tests las redirigen a tmp).
+    assert Path(daemonInput.carpeta_datos).name == "datos"
+    assert Path(daemonInput.carpeta_entrada).name == "input"
     assert Path(daemonInput.carpeta_tratados).name == "tratados"
     assert Path(daemonInput.carpeta_error).name == "error"

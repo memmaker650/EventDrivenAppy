@@ -146,6 +146,12 @@ class gestionDatos():
         # True si el evento se guardó en BD; cada rama informa en la UI.
         resultado = False
 
+        # Validaciones comunes antes de grabar ningún evento.
+        error = self._validar_operacion(accion, origen, cantidad, destino, tienda)
+        if error:
+            self._actualizar_estado(error, "Error")
+            return False
+
         if accion == "crear" or accion == "AccountCreated":
             if propietario == "":
                 self._actualizar_estado("Introducir Nombre Titular.", "Error")
@@ -246,11 +252,62 @@ class gestionDatos():
             )
 
             resultado = self._informar(domain.handle_close_account(cmd), f"Cierre de la cuenta {origen} registrado")
+            if resultado:
+                # Las operaciones siguientes deben ver ya la cuenta cerrada, sin esperar al batch.
+                database.actualizar_estado_cuenta(origen, "closed")
 
         # self.refresh_balance()
 
         print("FIN de ejecutarAccion.")
         return resultado
+
+    # Acciones (de la UI y nombres de evento) que mueven dinero de la cuenta origen.
+    ACCIONES_CON_IMPORTE = {
+        "depositar", "MoneyDeposited", "retirar", "Moneywithdraw", "transferencia", "MoneyTransfer",
+        "pago_tarjeta", "CardPayment", "pedir_hipoteca", "demandMortgage", "pago_hipoteca",
+        "mortgagePayment", "pedir_crédito", "demandCredit", "pago_crédito", "CreditPayment",
+    }
+    ACCIONES_CIERRE = {"cerrar", "CloseAccount"}
+
+    def _validar_operacion(self, accion, origen, cantidad, destino, tienda):
+        """Mensaje de error si la operación no se puede hacer; None si es válida."""
+        if accion in ("crear", "AccountCreated"):
+            return None
+        if accion not in self.ACCIONES_CON_IMPORTE and accion not in self.ACCIONES_CIERRE:
+            return f"Acción desconocida: {accion}"
+
+        error = self._validar_cuenta(origen)
+        if error or accion in self.ACCIONES_CIERRE:
+            return error
+
+        try:
+            importe_ok = domain.to_decimal(cantidad) > 0
+        except ValueError:
+            importe_ok = False
+        if not importe_ok:
+            return f"Cantidad no válida: '{cantidad}' (debe ser un número mayor que 0)"
+
+        if accion in ("transferencia", "MoneyTransfer"):
+            if not destino:
+                return "Falta la cuenta destino"
+            if destino == origen:
+                return "La cuenta destino no puede ser la de origen"
+            return self._validar_cuenta(destino)
+
+        if accion in ("pago_tarjeta", "CardPayment") and not tienda:
+            return "Falta la tienda del pago con tarjeta"
+
+        return None
+
+    def _validar_cuenta(self, cuenta):
+        if not cuenta:
+            return "No hay cuenta asociada"
+        info = database.load_accountInfo(cuenta)
+        if not info:
+            return f"La cuenta {cuenta} no existe"
+        if info[3] == "closed":
+            return f"La cuenta {cuenta} está cerrada"
+        return None
 
     def _informar(self, guardado, mensaje_ok):
         """Mensaje verde si save_event confirmó la inserción; rojo con el error si no."""
@@ -378,7 +435,23 @@ class gestionDatos():
 
     # Método para lanzar Batch tratamiento Eventos y actualizar DB si necesario.
     #--------------------------------------------------------------------------------------
+    # 1) procesa los ficheros pendientes de datos/input, 2) recalcula saldos desde los eventos,
+    # 3) deja el resumen global en el log y en pantalla (barra de estado + ventana de resumen).
     def lanzar_BatchTratarEventos(self, widget):
         logger.info("Dentro Batch Tratar Eventos Update DB")
 
-        return self.calculoEventosACuenta(widget) is not None
+        resumen = daemonInput.procesar_carpeta_entrada()
+        resumen.proyeccion = self.calculoEventosACuenta(widget)
+        resumen.registrar_en_log()
+
+        if resumen.proyeccion is None:
+            tipo = "Error"
+        else:
+            tipo = "warning" if resumen.hay_avisos else "OK"
+        self.label_info = resumen.linea()
+        self._actualizar_estado(self.label_info, tipo)
+        if self.app is not None and hasattr(self.app, "mostrar_resumen"):
+            self.app.mostrar_resumen(resumen.texto())
+
+        self.ultimo_resumen = resumen
+        return resumen.proyeccion is not None

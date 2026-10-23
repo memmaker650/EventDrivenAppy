@@ -1,3 +1,4 @@
+import os
 import sys
 import sqlite3
 import json
@@ -21,7 +22,8 @@ def get_connection():
 
     db_file = db_file / DB_NAME                  # 👈 aquí concatenas carpeta + nombre
 
-    return conectar(db_file)
+    # EBD_DB permite apuntar a otra BD (pruebas, copias) sin tocar la de desarrollo.
+    return conectar(os.environ.get("EBD_DB", db_file))
 
 # PRAGMA foreign_keys es por conexión: hay que activarlo en CADA conexión que se abre.
 def conectar(db_file):
@@ -196,6 +198,16 @@ def load_accountInfo(cuenta):
     conn.close()
 
     return datos
+
+# Cambiar el estado de una cuenta (open / closed) en el modelo de lectura.
+def actualizar_estado_cuenta(cuenta, estado):
+    conn = get_connection()
+    try:
+        with conn:
+            cur = conn.execute("UPDATE accounts SET state = ? WHERE account_id = ?", (estado, cuenta))
+        return cur.rowcount
+    finally:
+        conn.close()
 
 # Método para crear cuenta en la tabla ACCOUTS
 def crearCuenta(accid, owner, family="", dni="", email="", address="", city="", nation=""):

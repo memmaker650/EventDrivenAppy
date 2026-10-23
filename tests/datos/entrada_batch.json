@@ -1,0 +1,468 @@
+[
+    {
+        "aggregate_id": "ACC-006",
+        "event_type": "AccountCreated",
+        "event_data": {
+            "account_id": "ACC-006",
+            "owner": "Laura",
+            "family_name": "Martín Sánchez",
+            "doc_id": "50123456A",
+            "email": "laura.martin@correo.es",
+            "address": "C/ Alcalá 120, 3ºB",
+            "city": "Madrid",
+            "nationality": "ES - España"
+        }
+    },
+    {
+        "aggregate_id": "ACC-007",
+        "event_type": "AccountCreated",
+        "event_data": {
+            "account_id": "ACC-007",
+            "owner": "Pablo",
+            "family_name": "Ruiz Ortega",
+            "doc_id": "28765432K",
+            "email": "pablo.ruiz@correo.es",
+            "address": "Av. de la Constitución 8",
+            "city": "Sevilla",
+            "nationality": "ES - España"
+        }
+    },
+    {
+        "aggregate_id": "ACC-008",
+        "event_type": "AccountCreated",
+        "event_data": {
+            "account_id": "ACC-008",
+            "owner": "Carmen",
+            "family_name": "Gil Navarro",
+            "doc_id": "19283746Q",
+            "email": "carmen.gil@correo.es",
+            "address": "C/ Colón 45",
+            "city": "Valencia",
+            "nationality": "ES - España"
+        }
+    },
+    {
+        "aggregate_id": "ACC-009",
+        "event_type": "AccountCreated",
+        "event_data": {
+            "account_id": "ACC-009",
+            "owner": "Diego",
+            "family_name": "Torres Vidal",
+            "doc_id": "Y1234567X",
+            "email": "diego.torres@correo.pt",
+            "address": "Gran Vía 12",
+            "city": "Bilbao",
+            "nationality": "PT - Portugal"
+        }
+    },
+    {
+        "aggregate_id": "ACC-010",
+        "event_type": "AccountCreated",
+        "event_data": {
+            "account_id": "ACC-010",
+            "owner": "Sofía",
+            "family_name": "Castro León",
+            "doc_id": "45678912L",
+            "email": "",
+            "address": "C/ Mayor 3",
+            "city": "Zaragoza",
+            "nationality": "ES - España"
+        }
+    },
+    {
+        "aggregate_id": "ACC-011",
+        "event_type": "AccountCreated",
+        "event_data": {
+            "account_id": "ACC-011",
+            "owner": "Hugo",
+            "family_name": "Blanco Ramos",
+            "doc_id": "33445566P",
+            "email": "hugo.blanco@correo.es",
+            "address": "C/ San Juan 7",
+            "city": "",
+            "nationality": "FR - Francia"
+        }
+    },
+    {
+        "aggregate_id": "ACC-008",
+        "event_type": "MoneyDeposited",
+        "event_data": {
+            "account_id": "ACC-008",
+            "amount": 1596.6
+        }
+    },
+    {
+        "aggregate_id": "ACC-007",
+        "event_type": "MoneyDeposited",
+        "event_data": {
+            "account_id": "ACC-007",
+            "amount": 2223.68
+        }
+    },
+    {
+        "aggregate_id": "ACC-009",
+        "event_type": "MoneyDeposited",
+        "event_data": {
+            "account_id": "ACC-009",
+            "amount": 617.09
+        }
+    },
+    {
+        "aggregate_id": "ACC-009",
+        "event_type": "MoneyDeposited",
+        "event_data": {
+            "account_id": "ACC-009",
+            "amount": 1187.16
+        }
+    },
+    {
+        "aggregate_id": "ACC-006",
+        "event_type": "MoneyDeposited",
+        "event_data": {
+            "account_id": "ACC-006",
+            "amount": 2774.5
+        }
+    },
+    {
+        "aggregate_id": "ACC-008",
+        "event_type": "MoneyDeposited",
+        "event_data": {
+            "account_id": "ACC-008",
+            "amount": 951.35
+        }
+    },
+    {
+        "aggregate_id": "ACC-006",
+        "event_type": "MoneyDeposited",
+        "event_data": {
+            "account_id": "ACC-006",
+            "amount": 2143.54
+        }
+    },
+    {
+        "aggregate_id": "ACC-009",
+        "event_type": "MoneyDeposited",
+        "event_data": {
+            "account_id": "ACC-009",
+            "amount": 2203.23
+        }
+    },
+    {
+        "aggregate_id": "ACC-006",
+        "event_type": "MoneyDeposited",
+        "event_data": {
+            "account_id": "ACC-006",
+            "amount": 2249.48
+        }
+    },
+    {
+        "aggregate_id": "ACC-007",
+        "event_type": "MoneyDeposited",
+        "event_data": {
+            "account_id": "ACC-007",
+            "amount": 1195.88
+        }
+    },
+    {
+        "aggregate_id": "ACC-006",
+        "event_type": "MoneyDeposited",
+        "event_data": {
+            "account_id": "ACC-006",
+            "amount": 2399.73
+        }
+    },
+    {
+        "aggregate_id": "ACC-008",
+        "event_type": "MoneyDeposited",
+        "event_data": {
+            "account_id": "ACC-008",
+            "amount": 986.37
+        }
+    },
+    {
+        "aggregate_id": "ACC-009",
+        "event_type": "MoneyDeposited",
+        "event_data": {
+            "account_id": "ACC-009",
+            "amount": 395.11
+        }
+    },
+    {
+        "aggregate_id": "ACC-010",
+        "event_type": "MoneyDeposited",
+        "event_data": {
+            "account_id": "ACC-010",
+            "amount": 500
+        }
+    },
+    {
+        "aggregate_id": "ACC-011",
+        "event_type": "MoneyDeposited",
+        "event_data": {
+            "account_id": "ACC-011",
+            "amount": 750
+        }
+    },
+    {
+        "aggregate_id": "ACC-006",
+        "event_type": "demandMortgage",
+        "event_data": {
+            "account_id": "ACC-006",
+            "amount": 180000,
+            "interest_Rate": 3.1,
+            "return_Period": 25,
+            "initialDate": "2026-02-01"
+        }
+    },
+    {
+        "aggregate_id": "ACC-007",
+        "event_type": "demandCredit",
+        "event_data": {
+            "account_id": "ACC-007",
+            "amount": 12000,
+            "interest_Rate": 6.5,
+            "return_Period": 4,
+            "initialDate": "2026-03-01"
+        }
+    },
+    {
+        "aggregate_id": "ACC-007",
+        "event_type": "Moneywithdraw",
+        "event_data": {
+            "account_id": "ACC-007",
+            "amount": 3037.24
+        }
+    },
+    {
+        "aggregate_id": "ACC-007",
+        "event_type": "MoneyTransfer",
+        "event_data": {
+            "account_id": "ACC-007",
+            "amount": 1776.83,
+            "To": "ACC-009"
+        }
+    },
+    {
+        "aggregate_id": "ACC-009",
+        "event_type": "CardPayment",
+        "event_data": {
+            "account_id": "ACC-009",
+            "amount": 61.6,
+            "shop": "Repsol"
+        }
+    },
+    {
+        "aggregate_id": "ACC-008",
+        "event_type": "CardPayment",
+        "event_data": {
+            "account_id": "ACC-008",
+            "amount": 292.3,
+            "shop": "Ikea"
+        }
+    },
+    {
+        "aggregate_id": "ACC-008",
+        "event_type": "MoneyTransfer",
+        "event_data": {
+            "account_id": "ACC-008",
+            "amount": 261.6,
+            "To": "ACC-006"
+        }
+    },
+    {
+        "aggregate_id": "ACC-006",
+        "event_type": "CardPayment",
+        "event_data": {
+            "account_id": "ACC-006",
+            "amount": 747.81,
+            "shop": "Mercadona"
+        }
+    },
+    {
+        "aggregate_id": "ACC-008",
+        "event_type": "Moneywithdraw",
+        "event_data": {
+            "account_id": "ACC-008",
+            "amount": 354.41
+        }
+    },
+    {
+        "aggregate_id": "ACC-008",
+        "event_type": "CardPayment",
+        "event_data": {
+            "account_id": "ACC-008",
+            "amount": 498.71,
+            "shop": "Repsol"
+        }
+    },
+    {
+        "aggregate_id": "ACC-009",
+        "event_type": "Moneywithdraw",
+        "event_data": {
+            "account_id": "ACC-009",
+            "amount": 790.02
+        }
+    },
+    {
+        "aggregate_id": "ACC-006",
+        "event_type": "CardPayment",
+        "event_data": {
+            "account_id": "ACC-006",
+            "amount": 271.31,
+            "shop": "Repsol"
+        }
+    },
+    {
+        "aggregate_id": "ACC-008",
+        "event_type": "CardPayment",
+        "event_data": {
+            "account_id": "ACC-008",
+            "amount": 204.51,
+            "shop": "Repsol"
+        }
+    },
+    {
+        "aggregate_id": "ACC-008",
+        "event_type": "Moneywithdraw",
+        "event_data": {
+            "account_id": "ACC-008",
+            "amount": 169.51
+        }
+    },
+    {
+        "aggregate_id": "ACC-007",
+        "event_type": "Moneywithdraw",
+        "event_data": {
+            "account_id": "ACC-007",
+            "amount": 1162.87
+        }
+    },
+    {
+        "aggregate_id": "ACC-006",
+        "event_type": "Moneywithdraw",
+        "event_data": {
+            "account_id": "ACC-006",
+            "amount": 813.07
+        }
+    },
+    {
+        "aggregate_id": "ACC-009",
+        "event_type": "CardPayment",
+        "event_data": {
+            "account_id": "ACC-009",
+            "amount": 878.53,
+            "shop": "Amazon"
+        }
+    },
+    {
+        "aggregate_id": "ACC-006",
+        "event_type": "CardPayment",
+        "event_data": {
+            "account_id": "ACC-006",
+            "amount": 313.22,
+            "shop": "Repsol"
+        }
+    },
+    {
+        "aggregate_id": "ACC-007",
+        "event_type": "Moneywithdraw",
+        "event_data": {
+            "account_id": "ACC-007",
+            "amount": 1062.58
+        }
+    },
+    {
+        "aggregate_id": "ACC-007",
+        "event_type": "CardPayment",
+        "event_data": {
+            "account_id": "ACC-007",
+            "amount": 986.88,
+            "shop": "Zara"
+        }
+    },
+    {
+        "aggregate_id": "ACC-009",
+        "event_type": "MoneyTransfer",
+        "event_data": {
+            "account_id": "ACC-009",
+            "amount": 200,
+            "To": "ACC-099"
+        }
+    },
+    {
+        "aggregate_id": "ACC-009",
+        "event_type": "Moneywithdraw",
+        "event_data": {
+            "account_id": "ACC-009",
+            "amount": -50
+        }
+    },
+    {
+        "aggregate_id": "ACC-007",
+        "event_type": "mortgagePayment",
+        "event_data": {
+            "account_id": "ACC-007",
+            "amount": 300,
+            "payment_date": "2026-04-01"
+        }
+    },
+    {
+        "aggregate_id": "ACC-006",
+        "event_type": "mortgagePayment",
+        "event_data": {
+            "account_id": "ACC-006",
+            "amount": 862.97,
+            "payment_date": "2026-03-01"
+        }
+    },
+    {
+        "aggregate_id": "ACC-006",
+        "event_type": "mortgagePayment",
+        "event_data": {
+            "account_id": "ACC-006",
+            "amount": 862.97,
+            "payment_date": "2026-04-01"
+        }
+    },
+    {
+        "aggregate_id": "ACC-006",
+        "event_type": "mortgagePayment",
+        "event_data": {
+            "account_id": "ACC-006",
+            "amount": 862.97,
+            "payment_date": "2026-05-01"
+        }
+    },
+    {
+        "aggregate_id": "ACC-007",
+        "event_type": "CreditPayment",
+        "event_data": {
+            "account_id": "ACC-007",
+            "amount": 284.58,
+            "payment_date": "2026-04-01"
+        }
+    },
+    {
+        "aggregate_id": "ACC-007",
+        "event_type": "CreditPayment",
+        "event_data": {
+            "account_id": "ACC-007",
+            "amount": 284.58
+        }
+    },
+    {
+        "aggregate_id": "ACC-008",
+        "event_type": "CloseAccount",
+        "event_data": {
+            "account_id": "ACC-008"
+        }
+    },
+    {
+        "aggregate_id": "ACC-008",
+        "event_type": "MoneyDeposited",
+        "event_data": {
+            "account_id": "ACC-008",
+            "amount": 100
+        }
+    }
+]

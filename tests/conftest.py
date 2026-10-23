@@ -38,3 +38,15 @@ class FakeApp:
 @pytest.fixture
 def fake_app():
     return FakeApp()
+
+
+@pytest.fixture(autouse=True)
+def carpetas_batch(tmp_path, monkeypatch):
+    """Carpetas de ficheros del batch en tmp: ningún test toca datos/input del proyecto."""
+    import daemonInput
+
+    carpetas = {nombre: tmp_path / "datos" / nombre for nombre in ("input", "tratados", "error")}
+    monkeypatch.setattr(daemonInput, "carpeta_entrada", carpetas["input"])
+    monkeypatch.setattr(daemonInput, "carpeta_tratados", carpetas["tratados"])
+    monkeypatch.setattr(daemonInput, "carpeta_error", carpetas["error"])
+    return carpetas

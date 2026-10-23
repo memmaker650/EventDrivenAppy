@@ -171,6 +171,7 @@ def test_ejecutar_accion_crear_y_movimientos(gestor, isolated_db):
     )
     assert database.load_accountInfo("ACC-070")[1] == "Fran"
 
+    database.crearCuenta("ACC-071", "Destino")
     gestor.ejecutarAccion(None, accion="depositar", origen="ACC-070", cantidad=200)
     gestor.ejecutarAccion(None, accion="retirar", origen="ACC-070", cantidad=50)
     gestor.ejecutarAccion(None, accion="transferencia", origen="ACC-070", cantidad=20, destino="ACC-071")
@@ -238,6 +239,7 @@ def test_ejecutar_accion_prestamo_datos_invalidos_no_graba_evento(gestor, isolat
 
 
 def test_operaciones_confirman_en_verde(gestor, isolated_db):
+    database.crearCuenta("ACC-088", "Destino")
     database.crearCuenta("ACC-087", "Titular")  # la FK exige que la cuenta exista
     assert gestor.ejecutarAccion(None, accion="depositar", origen="ACC-087", cantidad="100,5") is True
     assert gestor.ejecutarAccion(None, accion="retirar", origen="ACC-087", cantidad=20) is True
@@ -297,15 +299,21 @@ def test_cuenta_muestra_eventos_de_sus_prestamos(gestor, isolated_db):
 
 
 def test_ejecutar_accion_pago_hipoteca_sin_hipoteca(gestor, isolated_db):
+    database.crearCuenta("ACC-084", "Titular")
     gestor.ejecutarAccion(None, accion="pago_hipoteca", origen="ACC-084", cantidad=100)
     assert gestor.app.estados[-1] == ("No hay hipoteca asociada", "Error")
     assert database.load_all_events() == []
 
 
 def test_ejecutar_accion_cerrar(gestor, isolated_db):
-    gestor.ejecutarAccion(None, "cerrar", "ACC-090", 0, None, None, None, None, None)
+    database.crearCuenta("ACC-090", "Titular")
+    assert gestor.ejecutarAccion(None, accion="cerrar", origen="ACC-090", cantidad=0) is True
     tipos = [e[0] for e in database.load_events("ACC-090")]
     assert tipos == ["CloseAccount"]
+    # La cuenta queda cerrada al momento: ya no admite operaciones.
+    assert database.load_accountInfo("ACC-090")[3] == "closed"
+    assert gestor.ejecutarAccion(None, accion="depositar", origen="ACC-090", cantidad=10) is False
+    assert gestor.app.estados[-1] == ("La cuenta ACC-090 está cerrada", "Error")
 
 
 def test_listar_y_traer_info_hyp_cred(gestor, isolated_db):
